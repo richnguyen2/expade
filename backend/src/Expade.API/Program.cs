@@ -2,6 +2,7 @@ using Expade.API.Endpoints;
 using Expade.Core.Interfaces;
 using Expade.Infrastructure;
 using Expade.Infrastructure.Repositories;
+using Expade.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -15,6 +16,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Register Repositories for Dependency Injection
 builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
+
+builder.Services.AddHttpClient<IGeocodingService, OpenCageGeocodingService>();
+
+// Set your API key in user-secrets or environment variable and retrieve it here
+var apiKey = builder.Configuration["OpenCageApiKey"];
+
+builder.Services.AddSingleton<IGeocodingService>(sp => 
+    new OpenCageGeocodingService(new HttpClient(), apiKey));
+
 
 builder.Services.AddOpenApi();
 
