@@ -22,27 +22,37 @@ public static class BusinessEndpoints
             return business is not null ? Results.Ok(business) : Results.NotFound();
         });
 
-        group.MapPost("/", async (CreateBusinessRequest request, IBusinessRepository repository) =>
-        {
+        group.MapPost("/", async (CreateBusinessRequest request, IBusinessRepository repository, IGeocodingService geoService) =>
+        {   
+            var coordinates = await geoService.GetCoordinatesAsync(request.Address);
+
             var newBusiness = new Business
             {
                 Name = request.Name,
                 Description = request.Description,
-                Category = request.Category
+                Category = request.Category,
+                Address = request.Address,
+                Latitude = coordinates.Lat,
+                Longitude = coordinates.Lon
             };
 
             await repository.AddAsync(newBusiness);
             return Results.Created($"/businesses/{newBusiness.Id}", newBusiness);
         });
 
-        group.MapPut("/{id:guid}", async (Guid id, UpdateBusinessRequest request, IBusinessRepository repository) =>
-        {
+        group.MapPut("/{id:guid}", async (Guid id, UpdateBusinessRequest request, IBusinessRepository repository, IGeocodingService geoService) =>
+        {   
+            var coordinates = await geoService.GetCoordinatesAsync(request.Address);
+
             var business = await repository.GetByIdAsync(id);
             if (business is null) return Results.NotFound();
 
             business.Name = request.Name;
             business.Description = request.Description;
             business.Category = request.Category;
+            business.Address = request.Address;
+            business.Latitude = coordinates.Lat;
+            business.Longitude = coordinates.Lon;
 
             await repository.UpdateAsync(business);
             return Results.NoContent();

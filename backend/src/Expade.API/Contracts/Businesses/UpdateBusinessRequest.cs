@@ -1,2 +1,2 @@
 namespace Expade.API.Contracts.Businesses;
-public record UpdateBusinessRequest(string Name, string Description, string Category);
+public record UpdateBusinessRequest(string Name, string Description, string Category, string Address);
