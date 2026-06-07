@@ -8,7 +8,7 @@ public static class BusinessEndpoints
 {
     public static void MapBusinessEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/businesses").WithTags("Businesses");
+        var group = app.MapGroup("/api/businesses").WithTags("Businesses");
 
         group.MapGet("/", async (IBusinessRepository repository) =>
         {

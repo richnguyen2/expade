@@ -40,5 +40,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapBusinessEndpoints();
+app.MapWebhookEndpoints();
 
 app.Run();
