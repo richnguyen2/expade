@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<Business> Businesses => Set<Business>();
     public DbSet<Worker> Workers => Set<Worker>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<Category> Categories => Set<Category>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,6 +27,18 @@ public class AppDbContext : DbContext
             .HasOne(br => br.User)
             .WithMany()
             .HasForeignKey(br => br.UserId);
+        
+        modelBuilder.Entity<BusinessRequest>()
+        .HasOne(br => br.Category)
+        .WithMany()
+        .HasForeignKey(br => br.CategoryId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Business>()
+            .HasOne(b => b.Category)
+            .WithMany()
+            .HasForeignKey(b => b.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Prevent duplicate employment records
         modelBuilder.Entity<Worker>()
@@ -71,5 +84,18 @@ public class AppDbContext : DbContext
             .WithMany(w => w.Appointments)
             .HasForeignKey(a => a.WorkerId)
             .OnDelete(DeleteBehavior.Restrict); // Prevent Worker deletion if they are scheduled
+
+        var beautyId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var homeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var autoId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var foodId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+
+        modelBuilder.Entity<Category>().HasData(
+            new Category { Id = beautyId, Name = "Beauty & Personal Care" },
+            new Category { Id = homeId, Name = "Home Services" },
+            new Category { Id = autoId, Name = "Automotive Services" },
+            new Category { Id = foodId, Name = "Food & Dining" }
+
+        );
     }
 }

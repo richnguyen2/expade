@@ -5,11 +5,20 @@ import Link from 'next/link';
 export default function Navbar() {
   const { user, isLoaded, isSignedIn } = useUser();
 
+  const isAdmin = user?.publicMetadata?.role === 'Admin';
+
   return (
     <nav className="flex justify-between items-center p-6 border-b">
-      <Link href="/" className="font-bold text-xl">Expade</Link>
+      {isLoaded && isSignedIn ? (
+          <Link href="/home" className="font-bold text-xl">Expade</Link>
+        ) : (
+          <Link href="/" className="font-bold text-xl">Expade</Link>
+        )}
       
       <div className="flex gap-4 items-center">
+        {isAdmin && (
+          <Link href="/admin" className="text-sm">Admin</Link>
+        )}
         <Link href="/business-signup" className="text-sm">Business</Link>
 
         {isLoaded && isSignedIn ? (

@@ -1,3 +1,5 @@
+using Expade.Core.Enums;
+
 namespace Expade.Core.Entities;
 
 public class User
@@ -12,11 +14,4 @@ public class User
     public ICollection<Worker> WorkerProfiles { get; set; } = new List<Worker>();
     public ICollection<Appointment> ClientAppointments { get; set; } = new List<Appointment>();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-}
-
-public enum UserRole
-{
-    User,
-    Worker,
-    Admin
 }

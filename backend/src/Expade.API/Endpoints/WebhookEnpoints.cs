@@ -3,6 +3,7 @@ using Svix;
 using System.Net;
 using Expade.Infrastructure;
 using Expade.Core.Entities;
+using Expade.Core.Enums;
 
 namespace Expade.API.Endpoints;
 
