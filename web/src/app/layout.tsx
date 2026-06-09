@@ -1,15 +1,17 @@
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import Navbar from "@/components/Navbar";
-
+import Providers from "./providers";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
       <html lang="en">
         <body>
-          <Navbar /> {/* Now it appears on every page */}
-          <main>{children}</main>
+          <Providers>
+            <Navbar />
+            <main>{children}</main>
+          </Providers>
         </body>
       </html>
     </ClerkProvider>

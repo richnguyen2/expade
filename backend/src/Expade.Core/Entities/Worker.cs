@@ -1,3 +1,5 @@
+using Expade.Core.Enums;
+
 namespace Expade.Core.Entities;
 
 public class Worker
@@ -15,10 +17,4 @@ public class Worker
     public User User { get; set; } = null!;
     public Business Business { get; set; } = null!;
     public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
-}
-
-public enum WorkerRole
-{
-    Manager, // Can create services/add workers
-    Employee // Just performs services
 }

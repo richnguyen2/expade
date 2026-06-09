@@ -14,13 +14,13 @@ public class OpenCageGeocodingService : IGeocodingService
         _apiKey = apiKey;
     }
 
-    public async Task<(double Lat, double Lon)> GetCoordinatesAsync(string address)
+    public async Task<(double Lat, double Lon)?> GetCoordinatesAsync(string address)
     {
         var url = $"https://api.opencagedata.com/geocode/v1/json?q={Uri.EscapeDataString(address)}&key={_apiKey}";
         var response = await _httpClient.GetFromJsonAsync<OpenCageResponse>(url);
         
         var result = response?.Results?.FirstOrDefault();
-        if (result == null) throw new Exception("Address could not be geocoded.");
+        if (result == null) return null;
 
         return (result.Geometry.Lat, result.Geometry.Lng);
     }

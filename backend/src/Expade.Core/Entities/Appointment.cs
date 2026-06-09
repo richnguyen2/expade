@@ -1,3 +1,5 @@
+using Expade.Core.Enums;
+
 namespace Expade.Core.Entities;
 
 public class Appointment
@@ -20,12 +22,4 @@ public class Appointment
     public DateTimeOffset StartDateTime { get; set; }
     
     public AppointmentStatus Status { get; set; }
-}
-
-public enum AppointmentStatus
-{
-    Pending,
-    Confirmed,
-    Completed,
-    Cancelled
 }
