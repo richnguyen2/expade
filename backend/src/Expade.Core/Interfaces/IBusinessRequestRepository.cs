@@ -5,7 +5,7 @@ namespace Expade.Core.Interfaces;
 
 public interface IBusinessRequestRepository
 {
-    Task<IEnumerable<BusinessRequest>> GetAllAsync(RequestStatus? status = null);
+    Task<IEnumerable<BusinessRequest>> GetAllAsync();
     Task<BusinessRequest?> GetByIdAsync(Guid id);
     Task AddAsync(BusinessRequest request);
     Task UpdateAsync(BusinessRequest request);

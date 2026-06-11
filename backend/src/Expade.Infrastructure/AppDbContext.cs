@@ -35,6 +35,12 @@ public class AppDbContext : DbContext
         .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Business>()
+        .HasOne(b => b.BusinessRequest)
+        .WithOne(r => r.Business) 
+        .HasForeignKey<Business>(b => b.RequestId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Business>()
             .HasOne(b => b.Category)
             .WithMany()
             .HasForeignKey(b => b.CategoryId)

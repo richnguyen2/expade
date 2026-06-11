@@ -1,6 +1,9 @@
 using Expade.Core.Entities;
 using Expade.Core.Interfaces;
 using Expade.API.Contracts.Businesses;
+using System.Security.Claims;
+using Expade.Infrastructure;
+using Expade.Core.Enums;
 
 namespace Expade.API.Endpoints;
 
@@ -14,62 +17,98 @@ public static class BusinessEndpoints
         {
             var businesses = await repository.GetAllAsync();
             return Results.Ok(businesses);
-        });
+        }).RequireAuthorization();
 
-        group.MapGet("/{id:guid}", async (Guid id, IBusinessRepository repository) =>
-        {
-            var business = await repository.GetByIdAsync(id);
-            return business is not null ? Results.Ok(business) : Results.NotFound();
-        });
+        group.MapPost("/create-from-request", async (
+             ClaimsPrincipal userPrincipal,
+             CreateBusinessFromRequest contract,
+             IUserRepository userRepository,
+             IBusinessRequestRepository businessRequestRepository,
+             IBusinessRepository businessRepository,
+             IEmailService emailService) =>
+         {
+             var clerkId = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+             if (string.IsNullOrEmpty(clerkId)) return Results.Unauthorized();
 
-        group.MapPost("/", async (CreateBusinessRequest request, IBusinessRepository repository, IGeocodingService geoService) =>
-        {   
-            var coordinates = await geoService.GetCoordinatesAsync(request.Address);
-            if (coordinates == null) 
-            {
-                return Results.BadRequest("Could not geocode the provided address.");
-            }
+             var user = await userRepository.GetByExternalIdAsync(clerkId);
+             if (user == null) return Results.NotFound("User profile not found.");
 
-            var newBusiness = new Business
-            {
-                Name = request.Name,
-                Description = request.Description,
-                CategoryId = request.CategoryId,
-                Address = request.Address,
-                Latitude = coordinates.Value.Lat,
-                Longitude = coordinates.Value.Lon
-            };
+             // 2. Fetch and validate the original Business Request
+             var request = await businessRequestRepository.GetByIdAsync(contract.RequestId);
+             if (request == null) return Results.NotFound("Associated business request not found.");
+             if (request.UserId != user.Id) return Results.Forbid();
+             if (request.Status != RequestStatus.Approved) return Results.BadRequest("Request must be approved to onboard.");
 
-            await repository.AddAsync(newBusiness);
-            return Results.Created($"/businesses/{newBusiness.Id}", newBusiness);
-        });
+             // 3. Guard against duplicate onboarding submissions using the updated repository
+             var alreadyExists = await businessRepository.ExistsByRequestIdAsync(request.Id);
+             if (alreadyExists) return Results.BadRequest("A business has already been created from this request.");
 
-        group.MapPut("/{id:guid}", async (Guid id, UpdateBusinessRequest request, IBusinessRepository repository, IGeocodingService geoService) =>
-        {   
-            var coordinates = await geoService.GetCoordinatesAsync(request.Address);
-            if (coordinates == null) 
-            {
-                return Results.BadRequest("Could not geocode the provided address.");
-            }
+             try
+             {
+                 var newBusiness = new Business
+                 {
+                     Name = request.Name,
+                     Phone = request.Phone,
+                     Address = request.Address,
+                     Latitude = request.Latitude,
+                     Longitude = request.Longitude,
+                     CategoryId = request.CategoryId,
+                     Description = contract.Description,
+                     RequestId = request.Id
+                 };
 
-            var business = await repository.GetByIdAsync(id);
-            if (business is null) return Results.NotFound();
+                 // 5. EF Core Magic: Populate child collections directly on the object graph
 
-            business.Name = request.Name;
-            business.Description = request.Description;
-            business.CategoryId = request.CategoryId;
-            business.Address = request.Address;
-            business.Latitude = coordinates.Value.Lat;
-            business.Longitude = coordinates.Value.Lon;
+                 // Automatically add the owner as the Manager
+                 newBusiness.Workers.Add(new Worker
+                 {
+                     UserId = user.Id,
+                     Email = user.Email,
+                     Role = WorkerRole.Manager
+                 });
 
-            await repository.UpdateAsync(business);
-            return Results.NoContent();
-        });
+                 // Add the custom onboarding Services
+                 foreach (var serviceItem in contract.Services)
+                 {
+                     newBusiness.Services.Add(new Service
+                     {
+                         Name = serviceItem.Name,
+                         Description = serviceItem.Description
+                     });
+                 }
 
-        group.MapDelete("/{id:guid}", async (Guid id, IBusinessRepository repository) =>
-        {
-            var wasDeleted = await repository.DeleteAsync(id);
-            return wasDeleted ? Results.NoContent() : Results.NotFound();
-        });
+                 // TODO: Process optional staff team members
+                 foreach (var workerItem in contract.Workers)
+                 {
+                     var existingStaffUser = await userRepository.GetByEmailAsync(workerItem.Email);
+                     // NEW VALIDATION: Fail fast if the user doesn't exist
+                     if (existingStaffUser == null)
+                     {
+                         return Results.BadRequest($"Cannot add staff: No user found with the email '{workerItem.Email}'. They must create an account first.");
+                     }
+
+                     newBusiness.Workers.Add(new Worker
+                     {
+                         // We now know for a fact existingStaffUser is not null
+                         UserId = existingStaffUser.Id,
+                         Email = workerItem.Email,
+                         Role = WorkerRole.Employee
+                     });
+                 }
+
+                 // 6. Save parent graph via repository 
+                 // This automatically handles the database transaction and inserts child dependencies
+                 await businessRepository.AddAsync(newBusiness);
+
+                 _ = emailService.SendBusinessLaunchedEmailAsync(user.Email, user.Username, request.Name);
+
+                 return Results.Ok(new { businessId = newBusiness.Id, message = "Business launched successfully!" });
+             }
+             catch (Exception ex)
+             {
+                 return Results.Problem($"Onboarding failed: {ex.Message}");
+             }
+         })
+         .RequireAuthorization();
     }
 }

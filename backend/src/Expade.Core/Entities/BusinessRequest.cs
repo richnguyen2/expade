@@ -18,4 +18,6 @@ public class BusinessRequest
 
     public Guid CategoryId { get; set; }
     public Category Category { get; set; } = null!;
+    // Inverse Nav Property
+    public Business? Business { get; set; }
 }

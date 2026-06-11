@@ -3,6 +3,8 @@ namespace Expade.Core.Entities;
 public class Business
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid RequestId { get; set; }
+    public BusinessRequest BusinessRequest { get; set; } = null!;
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;

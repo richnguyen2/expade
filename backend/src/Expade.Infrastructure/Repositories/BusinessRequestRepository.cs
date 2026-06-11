@@ -13,16 +13,13 @@ public class BusinessRequestRepository : IBusinessRequestRepository
 
     public BusinessRequestRepository(AppDbContext db) => _db = db;
 
-    public async Task<IEnumerable<BusinessRequest>> GetAllAsync(RequestStatus? status = null)
+    public async Task<IEnumerable<BusinessRequest>> GetAllAsync()
     {
         var query = _db.BusinessRequests.AsQueryable();
         
-        if (status.HasValue)
-        {
-            query = query.Where(r => r.Status == status.Value);
-        }
-        
-        return await query.ToListAsync();
+        return await _db.BusinessRequests
+        .OrderByDescending(r => r.CreatedAt)
+        .ToListAsync();
     }
 
     public async Task<BusinessRequest?> GetByIdAsync(Guid id) =>
