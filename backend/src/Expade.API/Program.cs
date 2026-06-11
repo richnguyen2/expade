@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,10 +76,12 @@ builder.Services.AddHttpClient<IGeocodingService, OpenCageGeocodingService>();
 // Set your API key in user-secrets or environment variable and retrieve it here
 var apiKey = builder.Configuration["OpenCageApiKey"];
 
-builder.Services.AddSingleton<IGeocodingService>(sp =>
-    new OpenCageGeocodingService(new HttpClient(), apiKey));
-
 builder.Services.AddOpenApi();
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 var app = builder.Build();
 

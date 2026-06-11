@@ -21,7 +21,7 @@ const request = async (endpoint: string, method: string, token: string | null, d
     throw new Error(errorBody.message || 'API request failed');
   }
 
-  return res.json();
+  return await res.json();
 };
 
 export const apiClient = {

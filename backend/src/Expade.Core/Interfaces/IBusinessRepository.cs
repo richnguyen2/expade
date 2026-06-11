@@ -9,4 +9,5 @@ public interface IBusinessRepository
     Task AddAsync(Business business);
     Task UpdateAsync(Business business);
     Task<bool> DeleteAsync(Guid id);
+    Task<bool> ExistsByRequestIdAsync(Guid requestId);
 }

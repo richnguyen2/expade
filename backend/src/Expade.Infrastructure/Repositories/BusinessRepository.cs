@@ -38,4 +38,8 @@ public class BusinessRepository : IBusinessRepository
         await _context.SaveChangesAsync();
         return true;
     }
+    public async Task<bool> ExistsByRequestIdAsync(Guid requestId)
+    {
+        return await _context.Businesses.AnyAsync(b => b.RequestId == requestId);
+    }
 }
