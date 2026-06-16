@@ -1,5 +1,4 @@
-using Expade.Core.Entities;
-namespace Expade.API.Contracts.Businesses;
+namespace Expade.API.Contracts.Businesses.Requests;
 public record CreateBusinessFromRequest(
     Guid RequestId, 
     string Description, 

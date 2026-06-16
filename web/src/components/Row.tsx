@@ -63,7 +63,7 @@ export default function Row() {
                 </h3>
                 
                 <p className="text-xs text-gray-500 font-medium tracking-tight uppercase">
-                  {biz.categoryName || 'Local Partner'}
+                  {biz.category?.name || 'Local Partner'}
                 </p>
 
                 <p className="text-sm text-gray-600 line-clamp-2 min-h-[40px]">

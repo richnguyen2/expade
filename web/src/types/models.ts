@@ -109,3 +109,29 @@ export interface BusinessRequest {
     user?: User;
     category?: Category;
 }
+
+export interface BusinessSummaryResponse {
+    id: string;
+    name: string;
+    categoryName: string;
+    role: string;
+}
+
+export interface UpdateBusinessRequest {
+    phone: string;
+    description: string;
+}
+
+export interface CreateServiceRequest {
+    name: string;
+    description: string;
+    price: number;
+    durationInMinutes: number;
+}
+
+export interface UpdateServiceRequest {
+    name: string;
+    description: string;
+    price: number;
+    durationInMinutes: number;
+}

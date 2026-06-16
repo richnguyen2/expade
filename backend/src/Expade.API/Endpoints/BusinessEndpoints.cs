@@ -1,9 +1,9 @@
 using Expade.Core.Entities;
 using Expade.Core.Interfaces;
-using Expade.API.Contracts.Businesses;
+using Expade.API.Contracts.Businesses.Requests;
 using System.Security.Claims;
-using Expade.Infrastructure;
 using Expade.Core.Enums;
+using Expade.API.Contracts.Businesses.Responses;
 
 namespace Expade.API.Endpoints;
 
@@ -18,6 +18,109 @@ public static class BusinessEndpoints
             var businesses = await repository.GetAllAsync();
             return Results.Ok(businesses);
         }).RequireAuthorization();
+
+        group.MapGet("/{id:guid}", async (
+            Guid id,
+            IBusinessRepository businessRepository) =>
+        {
+            var business = await businessRepository.GetByIdAsync(id);
+
+            if (business == null) return Results.NotFound();
+
+            // Map the raw Entity to the safe DTO
+            var responseDto = new BusinessResponse
+            {
+                Id = business.Id,
+                Name = business.Name,
+                Description = business.Description,
+                Phone = business.Phone,
+                Address = business.Address,
+                CategoryName = business.Category?.Name ?? "Unknown", // Safe null check
+
+                Services = business.Services.Select(s => new ServiceResponse(
+                    s.Id,
+                    s.Name,
+                    s.Description,
+                    s.Price,
+                    s.DurationInMinutes
+                )).ToList(),
+
+                Workers = business.Workers.Select(w => new WorkerResponse
+                {
+                    Id = w.Id,
+                    Email = w.Email,
+                    JobTitle = w.JobTitle,
+                    Role = w.Role.ToString()
+                }).ToList()
+            };
+
+            return Results.Ok(responseDto);
+        }).RequireAuthorization();
+
+        group.MapGet("/my-businesses", async (
+            ClaimsPrincipal userPrincipal,
+            IUserRepository userRepository,
+            IBusinessRepository businessRepository) =>
+        {
+            // 1. Get the Clerk ID from the JWT
+            var clerkId = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (clerkId == null) return Results.Unauthorized();
+
+            // 2. Map Clerk ID to your internal User ID
+            var user = await userRepository.GetByExternalIdAsync(clerkId);
+            if (user == null) return Results.NotFound("User not found in system.");
+
+            // 3. Fetch businesses using the optimized repository method
+            var businesses = await businessRepository.GetBusinessesByUserIdAsync(user.Id);
+
+            // 4. Map to Summary DTO
+            var response = businesses.Select(b => new BusinessSummaryResponse
+            {
+                Id = b.Id,
+                Name = b.Name,
+                CategoryName = b.Category?.Name ?? "General",
+                Role = b.Workers.FirstOrDefault(w => w.UserId == user.Id)?.Role.ToString() ?? "Employee"
+            });
+
+            return Results.Ok(response);
+        })
+        .RequireAuthorization("Worker");
+
+        group.MapPatch("/{id:guid}", async (
+            Guid id,
+            UpdateBusinessRequest request,
+            ClaimsPrincipal userPrincipal,
+            IUserRepository userRepository,
+            IBusinessRepository businessRepository) =>
+        {
+            var clerkId = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (clerkId == null) return Results.Unauthorized();
+
+            var user = await userRepository.GetByExternalIdAsync(clerkId);
+            if (user == null) return Results.NotFound("User not found.");
+
+            var business = await businessRepository.GetByIdAsync(id);
+            if (business == null) return Results.NotFound("Business not found.");
+
+            var workerRecord = business.Workers.FirstOrDefault(w => w.UserId == user.Id);
+            if (workerRecord == null)
+            {
+                return Results.Forbid();
+            }
+
+            if (workerRecord.Role.ToString() == "Employee")
+            {
+                return Results.Forbid();
+            }
+
+            business.Phone = request.Phone;
+            business.Description = request.Description;
+
+            await businessRepository.UpdateAsync(business);
+
+            return Results.Ok(new { message = "Settings updated successfully" });
+        })
+        .RequireAuthorization("Worker");
 
         group.MapPost("/create-from-request", async (
              ClaimsPrincipal userPrincipal,
@@ -110,5 +213,125 @@ public static class BusinessEndpoints
              }
          })
          .RequireAuthorization();
+
+        group.MapPost("/{id:guid}/services", async (
+        Guid id,
+        CreateServiceRequest request,
+        ClaimsPrincipal userPrincipal,
+        IUserRepository userRepository,
+        IBusinessRepository businessRepository) =>
+        {
+            // 1. Authenticate and identify the user
+        var clerkId = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (clerkId == null) return Results.Unauthorized();
+
+        var user = await userRepository.GetByExternalIdAsync(clerkId);
+        if (user == null) return Results.NotFound("User not found.");
+
+            // 2. Fetch the business
+        var business = await businessRepository.GetByIdAsync(id);
+        if (business == null) return Results.NotFound("Business not found.");
+
+            // 3. Security Check: Ensure the user works at this business
+        var workerRecord = business.Workers.FirstOrDefault(w => w.UserId == user.Id);
+        if (workerRecord == null) return Results.Forbid();
+
+            // 4. Create the new Entity
+        var newService = new Service
+        {
+            Name = request.Name,
+            Description = request.Description,
+            BusinessId = business.Id,
+            Price = request.Price
+        };
+
+            // 5. Add to the business and save
+            // Note: This assumes your Business entity has: public ICollection<Service> Services { get; set; } = new List<Service>();
+        await businessRepository.AddServiceAsync(newService);
+        
+        await businessRepository.SaveChangesAsync();
+
+            // 6. Return the newly created service as a Response DTO
+        var response = new ServiceResponse(
+            newService.Id,
+            newService.Name,
+            newService.Description,
+            newService.Price,
+            newService.DurationInMinutes
+        );
+
+        return Results.Ok(response);
+        })
+        .RequireAuthorization("BusinessOwnerOnly");
+
+        group.MapDelete("/{id:guid}/services/{serviceId:guid}", async (
+            Guid id,
+            Guid serviceId,
+            ClaimsPrincipal userPrincipal,
+            IUserRepository userRepository,
+            IBusinessRepository businessRepository) =>
+        {
+            var clerkId = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (clerkId == null) return Results.Unauthorized();
+
+            var user = await userRepository.GetByExternalIdAsync(clerkId);
+            if (user == null) return Results.NotFound("User not found.");
+
+            var business = await businessRepository.GetByIdAsync(id);
+            if (business == null) return Results.NotFound("Business not found.");
+
+            var workerRecord = business.Workers.FirstOrDefault(w => w.UserId == user.Id);
+            if (workerRecord == null) return Results.Forbid(); 
+
+            var serviceToRemove = business.Services.FirstOrDefault(s => s.Id == serviceId);
+            if (serviceToRemove == null) return Results.NotFound("Service not found.");
+
+            // USE THE NEW EXPLICIT METHOD HERE
+            businessRepository.RemoveService(serviceToRemove);
+            await businessRepository.SaveChangesAsync();
+
+            return Results.NoContent();
+        })
+        .RequireAuthorization("BusinessOwnerOnly");
+
+        group.MapPut("/{id:guid}/services/{serviceId:guid}", async (
+            Guid id,
+            Guid serviceId,
+            UpdateServiceRequest request,
+            ClaimsPrincipal userPrincipal,
+            IUserRepository userRepository,
+            IBusinessRepository businessRepository) =>
+        {
+            // 1. Authenticate user
+            var clerkId = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (clerkId == null) return Results.Unauthorized();
+
+            var user = await userRepository.GetByExternalIdAsync(clerkId);
+            if (user == null) return Results.NotFound("User not found.");
+
+            // 2. Fetch business & verify authorization
+            var business = await businessRepository.GetByIdAsync(id);
+            if (business == null) return Results.NotFound("Business not found.");
+
+            var workerRecord = business.Workers.FirstOrDefault(w => w.UserId == user.Id);
+            if (workerRecord == null) return Results.Forbid(); 
+
+            // 3. Find the specific service
+            var serviceToUpdate = business.Services.FirstOrDefault(s => s.Id == serviceId);
+            if (serviceToUpdate == null) return Results.NotFound("Service not found.");
+
+            // 4. Update the properties
+            serviceToUpdate.Name = request.Name;
+            serviceToUpdate.Description = request.Description;
+            serviceToUpdate.Price = request.Price;
+            serviceToUpdate.DurationInMinutes = request.DurationInMinutes;
+
+            // 5. Save changes
+            await businessRepository.SaveChangesAsync();
+
+            // 6. Return 200 OK
+            return Results.Ok(new { message = "Service updated successfully" });
+        })
+        .RequireAuthorization("BusinessOwnerOnly");
     }
 }

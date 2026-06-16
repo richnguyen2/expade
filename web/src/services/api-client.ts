@@ -2,9 +2,10 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // api-client.ts
 const request = async (endpoint: string, method: string, token: string | null, data?: any) => {
-  const headers: Record<string, string> = {
-    'Authorization': `Bearer ${token}`,
-  };
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
   if (data) {
     headers['Content-Type'] = 'application/json';
@@ -21,6 +22,9 @@ const request = async (endpoint: string, method: string, token: string | null, d
     throw new Error(errorBody.message || 'API request failed');
   }
 
+  if (method == 'DELETE') {
+    return true;
+  }
   return await res.json();
 };
 
@@ -28,4 +32,6 @@ export const apiClient = {
   get: (url: string, token: string | null) => request(url, 'GET', token),
   post: (url: string, data: any, token: string | null) => request(url, 'POST', token, data),
   patch: (url: string, data: any, token: string | null) => request(url, 'PATCH', token, data),
+  put: (url: string, data: any, token: string | null) => request(url, 'PUT', token, data),
+  delete: (url: string, token: string | null) => request(url, 'DELETE', token),
 };

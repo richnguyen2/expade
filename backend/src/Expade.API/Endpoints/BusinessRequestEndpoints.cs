@@ -1,10 +1,11 @@
 using Expade.Core.Entities;
 using Expade.Core.Interfaces;
-using Expade.API.Contracts.BusinessesRequests;
+using Expade.API.Contracts.BusinessesRequests.Requests;
 using Expade.Core.Enums;
 using System.Security.Claims;
 using Expade.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Expade.API.Contracts.BusinessesRequests.Responses;
 namespace Expade.API.Endpoints;
 
 public static class BusinessRequestEndpoints
@@ -129,7 +130,8 @@ public static class BusinessRequestEndpoints
         group.MapGet("/{id:guid}/onboarding-data", async (
             Guid id, 
             ClaimsPrincipal userPrincipal, 
-            IUserRepository userRepository, 
+            IUserRepository userRepository,
+            IBusinessRepository businessRepository,
             AppDbContext db) =>
         {
             // Get the Clerk User ID from the token
@@ -146,6 +148,9 @@ public static class BusinessRequestEndpoints
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null) return Results.NotFound("Business request not found.");
+            var alreadyExists = await businessRepository.ExistsByRequestIdAsync(request.Id);
+
+            if (alreadyExists) return Results.NotFound("Business already created.");
 
             // Guard: Ensure the logged-in user actually owns this request
             if (request.UserId != user.Id) return Results.Forbid();
@@ -156,16 +161,17 @@ public static class BusinessRequestEndpoints
                 return Results.BadRequest("This business request has not been approved yet.");
             }
 
-            // Return clean, camelCase matched data to map right into your React form
-            return Results.Ok(new 
+            var onboardingData = new BusinessRequestOnboardResponse
             {
-                id = request.Id,
-                name = request.Name,
-                phone = request.Phone,
-                address = request.Address,
-                categoryId = request.CategoryId,
-                categoryName = request.Category?.Name
-            });
+                Id = request.Id,
+                Name = request.Name,
+                Phone = request.Phone,
+                Address = request.Address,
+                CategoryId = request.CategoryId,
+                CategoryName = request.Category.Name
+            };
+
+            return Results.Ok(onboardingData);
         }).RequireAuthorization();
 
     }

@@ -85,7 +85,7 @@ export default function Sidebar() {
         )}
 
         <Link 
-          href="/businesses/my-businesses"
+          href="/my-businesses"
           className="flex items-center gap-3 w-full px-3 py-2.5 bg-[#708238] text-white rounded-lg hover:bg-[#5b6b2e] transition-colors shadow-sm"
         >
           <Building2 className="w-5 h-5 shrink-0" />
