@@ -3,20 +3,17 @@ import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 
 export default async function LandingPage() {
-  // 1. Check authentication status on the server
   const { userId } = await auth();
 
-  // 2. If the user is logged in, instantly bounce them to /home
   if (userId) {
     redirect('/home');
   }
 
-  // 3. If they are NOT logged in, render the landing page
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
+    <div className="min-h-screen flex flex-col font-sans">
       
       {/* HEADER */}
-      <header className="px-8 py-6 bg-white border-b border-gray-200 flex items-center justify-start gap-8 shadow-sm">
+      <header className="px-8 py-6 bg-white border-b border-gray-200 flex items-center justify-between gap-8 shadow-sm">
         
         {/* Branding */}
         <div className="flex items-center gap-2">
@@ -27,7 +24,7 @@ export default async function LandingPage() {
         </div>
 
         {/* Auth Navigation - Top Left */}
-        <div className="flex items-center gap-4 border-l border-gray-300 pl-8">
+        <div className="flex items-center gap-4 pl-8">
           <SignInButton mode="modal">
             <button className="text-gray-600 hover:text-[#708238] font-bold transition">
               Log In
@@ -41,9 +38,9 @@ export default async function LandingPage() {
         </div>
       </header>
 
-      {/* HERO BODY */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 text-center -mt-16">
-        <div className="max-w-3xl mx-auto bg-white p-12 rounded-3xl shadow-xl border border-gray-100">
+      {/* BODY */}
+      <main className="flex-1 flex py-8 flex-col items-center justify-center px-6 text-center">
+        <div className="max-w-3xl mx-auto bg-white p-12 rounded-3xl">
           <div className="inline-block mb-4 px-4 py-1.5 bg-[#708238]/10 text-[#708238] rounded-full text-sm font-bold tracking-wide uppercase">
             The Premier Service Marketplace
           </div>

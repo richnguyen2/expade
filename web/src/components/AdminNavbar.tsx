@@ -5,7 +5,7 @@ import { Search, Bell } from 'lucide-react';
 
 export default function AdminNavbar() {
   return (
-    <header className="h-16 bg-[#708238] flex items-center justify-between px-8 shadow-md shrink-0">
+    <header className="h-16 bg-[#708238] flex items-center justify-between px-8 shrink-0">
       
       {/* Expade Logo */}
       <div className="flex items-center space-x-2">
