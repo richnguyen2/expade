@@ -1,13 +1,37 @@
 import { apiClient } from './api-client';
-import { Business, BusinessSummaryResponse, CreateServiceRequest, UpdateBusinessRequest, UpdateServiceRequest } from '@/types/models';
+import type {
+  BusinessResponse,
+  BusinessListItemResponse,
+  BusinessSummaryResponse,
+  CreateBusinessFromRequest,
+  CreateServiceRequest,
+  ServiceResponse,
+  UpdateBusinessRequest,
+  UpdateServiceRequest,
+} from '@/types';
 
 export const businessService = {
-    getAll: (token: string | null): Promise<Business[]> => apiClient.get('/businesses', token),
-    getById: (id: string, token: string | null): Promise<Business> => apiClient.get(`/businesses/${id}`, token),
-    getMyBusinesses: (token: string | null): Promise<BusinessSummaryResponse[]> => apiClient.get('/businesses/my-businesses', token),
-    createBusinessFromRequest: (data: any, token: string | null) => apiClient.post('/businesses/create-from-request', data, token),
-    updateBusiness: (id: string, data: UpdateBusinessRequest, token: string | null) => apiClient.patch(`/businesses/${id}`, data, token),
-    addService: (id: string, data: CreateServiceRequest, token: string | null) => apiClient.post(`/businesses/${id}/services`, data, token),
-    updateService: (id: string, serviceId: string, data: UpdateServiceRequest, token: string | null) => apiClient.put(`/businesses/${id}/services/${serviceId}`, data, token),
-    deleteService: (id: string, serviceId: string, token: string | null): Promise<Business> => apiClient.delete(`/businesses/${id}/services/${serviceId}`, token),
+  getAll: (token: string | null) =>
+    apiClient.get<BusinessListItemResponse[]>('/businesses', token),
+
+  getById: (id: string, token: string | null) =>
+    apiClient.get<BusinessResponse>(`/businesses/${id}`, token),
+
+  getMyBusinesses: (token: string | null) =>
+    apiClient.get<BusinessSummaryResponse[]>('/businesses/my-businesses', token),
+
+  createBusinessFromRequest: (data: CreateBusinessFromRequest, token: string | null) =>
+    apiClient.post<BusinessResponse>('/businesses/create-from-request', data, token),
+
+  updateBusiness: (id: string, data: UpdateBusinessRequest, token: string | null) =>
+    apiClient.patch<void>(`/businesses/${id}`, data, token),
+
+  addService: (id: string, data: CreateServiceRequest, token: string | null) =>
+    apiClient.post<ServiceResponse>(`/businesses/${id}/services`, data, token),
+
+  updateService: (id: string, serviceId: string, data: UpdateServiceRequest, token: string | null) =>
+    apiClient.put<ServiceResponse>(`/businesses/${id}/services/${serviceId}`, data, token),
+
+  deleteService: (id: string, serviceId: string, token: string | null) =>
+    apiClient.delete(`/businesses/${id}/services/${serviceId}`, token),
 };

@@ -3,7 +3,7 @@ using Expade.Core.Interfaces;
 using Expade.API.Contracts.Businesses.Requests;
 using System.Security.Claims;
 using Expade.Core.Enums;
-using Expade.API.Contracts.Businesses.Responses;
+using Expade.API.Mappings;
 
 namespace Expade.API.Endpoints;
 
@@ -16,7 +16,7 @@ public static class BusinessEndpoints
         group.MapGet("/", async (IBusinessRepository repository) =>
         {
             var businesses = await repository.GetAllAsync();
-            return Results.Ok(businesses);
+            return Results.Ok(businesses.Select(b => b.ToListItemResponse()));
         }).RequireAuthorization();
 
         group.MapGet("/{id:guid}", async (
@@ -27,34 +27,7 @@ public static class BusinessEndpoints
 
             if (business == null) return Results.NotFound();
 
-            // Map the raw Entity to the safe DTO
-            var responseDto = new BusinessResponse
-            {
-                Id = business.Id,
-                Name = business.Name,
-                Description = business.Description,
-                Phone = business.Phone,
-                Address = business.Address,
-                CategoryName = business.Category?.Name ?? "Unknown", // Safe null check
-
-                Services = business.Services.Select(s => new ServiceResponse(
-                    s.Id,
-                    s.Name,
-                    s.Description,
-                    s.Price,
-                    s.DurationInMinutes
-                )).ToList(),
-
-                Workers = business.Workers.Select(w => new WorkerResponse
-                {
-                    Id = w.Id,
-                    Email = w.Email,
-                    JobTitle = w.JobTitle,
-                    Role = w.Role.ToString()
-                }).ToList()
-            };
-
-            return Results.Ok(responseDto);
+            return Results.Ok(business.ToResponse());
         }).RequireAuthorization();
 
         group.MapGet("/my-businesses", async (
@@ -74,13 +47,7 @@ public static class BusinessEndpoints
             var businesses = await businessRepository.GetBusinessesByUserIdAsync(user.Id);
 
             // 4. Map to Summary DTO
-            var response = businesses.Select(b => new BusinessSummaryResponse
-            {
-                Id = b.Id,
-                Name = b.Name,
-                CategoryName = b.Category?.Name ?? "General",
-                Role = b.Workers.FirstOrDefault(w => w.UserId == user.Id)?.Role.ToString() ?? "Employee"
-            });
+            var response = businesses.Select(b => b.ToSummaryResponse(user.Id));
 
             return Results.Ok(response);
         })
@@ -108,7 +75,7 @@ public static class BusinessEndpoints
                 return Results.Forbid();
             }
 
-            if (workerRecord.Role.ToString() == "Employee")
+            if (workerRecord.Role == WorkerRole.Employee)
             {
                 return Results.Forbid();
             }
@@ -248,19 +215,11 @@ public static class BusinessEndpoints
             // 5. Add to the business and save
             // Note: This assumes your Business entity has: public ICollection<Service> Services { get; set; } = new List<Service>();
         await businessRepository.AddServiceAsync(newService);
-        
+
         await businessRepository.SaveChangesAsync();
 
             // 6. Return the newly created service as a Response DTO
-        var response = new ServiceResponse(
-            newService.Id,
-            newService.Name,
-            newService.Description,
-            newService.Price,
-            newService.DurationInMinutes
-        );
-
-        return Results.Ok(response);
+        return Results.Ok(newService.ToResponse());
         })
         .RequireAuthorization("BusinessOwnerOnly");
 
@@ -329,8 +288,8 @@ public static class BusinessEndpoints
             // 5. Save changes
             await businessRepository.SaveChangesAsync();
 
-            // 6. Return 200 OK
-            return Results.Ok(new { message = "Service updated successfully" });
+            // 6. Return the updated service as a Response DTO
+            return Results.Ok(serviceToUpdate.ToResponse());
         })
         .RequireAuthorization("BusinessOwnerOnly");
     }

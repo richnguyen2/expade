@@ -1,7 +1,4 @@
-using Expade.Core.Entities;
 using Expade.Core.Interfaces;
-using Expade.API.Contracts.BusinessesRequests;
-using Expade.Core.Enums;
 
 namespace Expade.API.Endpoints;
 

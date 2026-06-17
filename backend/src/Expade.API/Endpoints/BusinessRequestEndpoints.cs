@@ -1,11 +1,12 @@
 using Expade.Core.Entities;
 using Expade.Core.Interfaces;
-using Expade.API.Contracts.BusinessesRequests.Requests;
+using Expade.API.Contracts.BusinessRequests.Requests;
 using Expade.Core.Enums;
 using System.Security.Claims;
 using Expade.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using Expade.API.Contracts.BusinessesRequests.Responses;
+using Expade.API.Contracts.BusinessRequests.Responses;
+using Expade.API.Mappings;
 namespace Expade.API.Endpoints;
 
 public static class BusinessRequestEndpoints
@@ -17,7 +18,7 @@ public static class BusinessRequestEndpoints
         group.MapGet("/", async (IBusinessRequestRepository repository) =>
         {
             var requests = await repository.GetAllAsync();
-            return Results.Ok(requests);
+            return Results.Ok(requests.Select(r => r.ToResponse()));
         }).RequireAuthorization("AdminOnly");
 
         group.MapPost("/", async (
@@ -25,10 +26,8 @@ public static class BusinessRequestEndpoints
             CreateBusinessRequestRequest request, 
             IBusinessRequestRepository repository, 
             IUserRepository userRepository, 
-            IGeocodingService geoService, 
-            IEmailService emailService,
-            HttpContext http, 
-            AppDbContext db) =>
+            IGeocodingService geoService,
+            IEmailService emailService) =>
         {
             var clerkId = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(clerkId)) return Results.Unauthorized();
@@ -62,7 +61,7 @@ public static class BusinessRequestEndpoints
             {
                 _ = emailService.SendBusinessRequestConfirmationEmailAsync(email, user.Username, request.Name);
             }
-            return Results.Created($"/business-requests/{newBusinessRequest.Id}", newBusinessRequest);
+            return Results.Created($"/business-requests/{newBusinessRequest.Id}", newBusinessRequest.ToResponse());
         }).RequireAuthorization();
 
         group.MapPatch("/{id:guid}/status", async (
@@ -96,7 +95,13 @@ public static class BusinessRequestEndpoints
                     await userRepository.UpdateAsync(user);
 
                     var clerkSecretKey = config["Clerk:SecretKey"];
-                    var clerkUserId = user.Id.ToString(); // Ensure this matches Clerk's user ID format
+                    // Clerk's API expects the Clerk user ID, which we store as ExternalId — NOT the internal Guid.
+                    var clerkUserId = user.ExternalId;
+
+                    if (string.IsNullOrEmpty(clerkUserId))
+                    {
+                        return Results.Problem("Status updated, but user has no Clerk ExternalId to promote.");
+                    }
 
                     var clerkPayload = new
                     {
@@ -161,19 +166,8 @@ public static class BusinessRequestEndpoints
                 return Results.BadRequest("This business request has not been approved yet.");
             }
 
-            var onboardingData = new BusinessRequestOnboardResponse
-            {
-                Id = request.Id,
-                Name = request.Name,
-                Phone = request.Phone,
-                Address = request.Address,
-                CategoryId = request.CategoryId,
-                CategoryName = request.Category.Name
-            };
-
-            return Results.Ok(onboardingData);
+            return Results.Ok(request.ToOnboardResponse());
         }).RequireAuthorization();
 
     }
 }
-public record RequestFilter(RequestStatus? Status);

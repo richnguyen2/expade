@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { businessService } from '@/services/businessServices';
+import { QUERY_KEYS } from '@/lib/constants';
 import { MapPin, Phone, Star, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -11,7 +12,7 @@ export default function Row() {
 
   // Fetch the data
   const { data: businesses, isPending, error } = useQuery({
-    queryKey: ['businesses'],
+    queryKey: QUERY_KEYS.businesses,
     queryFn: async () => {
       const currentToken = await getToken();
       return businessService.getAll(currentToken);
@@ -35,7 +36,7 @@ export default function Row() {
 
       {/* Netflix / DoorDash style horizontal scroll container */}
       <div className="flex gap-5 overflow-x-auto pb-4 pt-1 px-2 snap-x snap-mandatory scroll-smooth scrollbar-hide">
-        {businesses.map((biz: any) => (
+        {businesses.map((biz) => (
           <Link 
             href={`/businesses/${biz.id}`} 
             key={biz.id} 
@@ -63,7 +64,7 @@ export default function Row() {
                 </h3>
                 
                 <p className="text-xs text-gray-500 font-medium tracking-tight uppercase">
-                  {biz.category?.name || 'Local Partner'}
+                  {biz.categoryName || 'Local Partner'}
                 </p>
 
                 <p className="text-sm text-gray-600 line-clamp-2 min-h-[40px]">

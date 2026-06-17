@@ -1,7 +1,8 @@
 'use client';
 
 import { businessRequestService } from "@/services/businessRequestService";
-import { BusinessRequest, RequestStatus } from "@/types/models";
+import { BusinessRequestResponse, RequestStatus } from "@/types";
+import { QUERY_KEYS } from "@/lib/constants";
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -9,8 +10,8 @@ export default function AdminRequestsPage() {
     const queryClient = useQueryClient();
     const { getToken } = useAuth();
 
-    const { data: requests = [], isLoading, error } = useQuery<BusinessRequest[]>({
-        queryKey: ['business-requests'],
+    const { data: requests = [], isLoading, error } = useQuery<BusinessRequestResponse[]>({
+        queryKey: QUERY_KEYS.businessRequests,
         queryFn: async () => {
             const currentToken = await getToken();
             return businessRequestService.getAll(currentToken);
@@ -23,21 +24,21 @@ export default function AdminRequestsPage() {
             return businessRequestService.updateStatus(id, status, currentToken);
         },
         onMutate: async ({ id, status }) => {
-        await queryClient.cancelQueries({ queryKey: ['business-requests'] });
-        const previousRequests = queryClient.getQueryData(['business-requests']);
-        
-        queryClient.setQueryData(['business-requests'], (old: BusinessRequest[]) => 
+        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.businessRequests });
+        const previousRequests = queryClient.getQueryData<BusinessRequestResponse[]>(QUERY_KEYS.businessRequests);
+
+        queryClient.setQueryData(QUERY_KEYS.businessRequests, (old: BusinessRequestResponse[] = []) =>
             old.map(r => r.id === id ? { ...r, status } : r)
         );
         return { previousRequests };
         },
         // If it fails, roll back to the previous state
-        onError: (err, newReq, context) => {
-            queryClient.setQueryData(['business-requests'], context?.previousRequests);
+        onError: (_err, _newReq, context) => {
+            queryClient.setQueryData(QUERY_KEYS.businessRequests, context?.previousRequests);
         },
         // Always refetch after error or success to ensure sync
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['business-requests'] });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.businessRequests });
         }
         });
 
@@ -74,7 +75,7 @@ export default function AdminRequestsPage() {
                                 <tr key={`${request.id}-${idx}`} className="hover:bg-gray-50/50 transition-colors">
                                     <td className="px-6 py-4 font-semibold text-gray-600">{request.id}</td>
                                     <td className="px-6 py-4 font-bold text-gray-900">{request.name}</td>
-                                    <td className="px-6 py-4 text-gray-600">{request.category?.name}</td>
+                                    <td className="px-6 py-4 text-gray-600">{request.categoryName}</td>
                                     <td className="px-6 py-4 text-gray-600">{request.address}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${request.status === RequestStatus.Pending ? "bg-amber-100 text-amber-800 border border-amber-200" :

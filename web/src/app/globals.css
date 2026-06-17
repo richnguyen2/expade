@@ -10,6 +10,11 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Brand palette — use via `bg-brand`, `text-brand`, `border-brand`,
+     and opacity variants like `bg-brand/10`. Replaces hardcoded #708238. */
+  --color-brand: #708238;
+  --color-brand-dark: #5b6b2e;
 }
 
 @media (prefers-color-scheme: dark) {

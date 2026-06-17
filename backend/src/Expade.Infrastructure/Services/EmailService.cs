@@ -7,11 +7,15 @@ public class EmailService : IEmailService
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
+    private readonly string _fromAddress;
+    private readonly string _frontendBaseUrl;
 
     public EmailService(HttpClient httpClient, IConfiguration config)
     {
         _httpClient = httpClient;
         _apiKey = config["Resend:ApiKey"]!;
+        _fromAddress = config["Resend:FromAddress"] ?? "Expade <onboarding@resend.dev>";
+        _frontendBaseUrl = config["Frontend:BaseUrl"] ?? "http://localhost:3000";
     }
 
     public async Task SendBusinessRequestConfirmationEmailAsync(string toEmail, string userName,string businessName)
@@ -21,7 +25,7 @@ public class EmailService : IEmailService
 
         var payload = new
         {
-            from = "Expade <onboarding@resend.dev>",
+            from = _fromAddress,
             to = new[] { toEmail },
             subject = "Business Request Received",
             html = $"<p>Hi <strong>{userName}</strong>,</p><p>We have successfully received your business request for <strong>{businessName}</strong>. We'll get back to you shortly!</p>"
@@ -38,7 +42,7 @@ public class EmailService : IEmailService
 
         var payload = new
         {
-            from = "Expade <onboarding@resend.dev>",
+            from = _fromAddress,
             to = new[] { toEmail },
             subject = "Business Request Rejected",
             html = $"<p>Hi <strong>{userName}</strong>,</p><p>We're sorry to inform you that your business request for <strong>{businessName}</strong> has been rejected.</p>"
@@ -53,12 +57,11 @@ public class EmailService : IEmailService
         var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
 
-        // The frontend route for now, will change when deployed.
-        var onboardLink = $"http://localhost:3000/onboard/{requestId}";
+        var onboardLink = $"{_frontendBaseUrl}/onboard/{requestId}";
 
         var payload = new
         {
-            from = "Expade <onboarding@resend.dev>",
+            from = _fromAddress,
             to = new[] { toEmail },
             subject = "Action Required: Complete Your Expade Business Setup",
             html = $@"
@@ -82,10 +85,10 @@ public class EmailService : IEmailService
 
         var payload = new
         {
-            from = "Expade <onboarding@resend.dev>",
+            from = _fromAddress,
             to = new[] { toEmail },
-            subject = "Business Laucnhed On Expade",
-            html = $"<p>Hi <strong>{userName}</strong>,</p><p>Congratulations on luanching <strong>{businessName}</strong> on Expade!</p>"
+            subject = "Business Launched On Expade",
+            html = $"<p>Hi <strong>{userName}</strong>,</p><p>Congratulations on launching <strong>{businessName}</strong> on Expade!</p>"
         };
 
         request.Content = JsonContent.Create(payload);

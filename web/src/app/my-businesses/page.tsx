@@ -1,17 +1,18 @@
 'use client';
 
 import { businessService } from "@/services/businessServices";
-import { BusinessSummaryResponse } from "@/types/models";
+import { BusinessSummaryResponse } from "@/types";
+import { QUERY_KEYS } from "@/lib/constants";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, Building2, UserCog, AlertCircle } from 'lucide-react';
+import { Briefcase, Building2, UserCog } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MyBusinessesPage() {
     const { getToken } = useAuth();
 
     const { data: businesses = [], isLoading, error } = useQuery<BusinessSummaryResponse[]>({
-        queryKey: ['business', 'my-businesses'],
+        queryKey: QUERY_KEYS.myBusinesses,
         queryFn: async () => {
             const token = await getToken();
             return businessService.getMyBusinesses(token);

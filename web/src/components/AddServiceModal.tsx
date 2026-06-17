@@ -2,8 +2,9 @@ import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { X, Tag, AlignLeft, DollarSign, Loader2, Clock } from 'lucide-react';
-import { businessService } from '@/services/businessServices'; // Ensure this path is correct
-import { CreateServiceRequest } from '@/types/models';
+import { businessService } from '@/services/businessServices';
+import { CreateServiceRequest } from '@/types';
+import { QUERY_KEYS } from '@/lib/constants';
 
 interface AddServiceModalProps {
     businessId: string;
@@ -22,7 +23,7 @@ export default function AddServiceModal({ businessId, isOpen, onClose }: AddServ
             
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['business', businessId] });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.business(businessId) });
             onClose();
         }
     });

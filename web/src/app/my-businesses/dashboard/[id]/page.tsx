@@ -9,7 +9,8 @@ import {
     BarChart3, CalendarDays, Settings, Users, MousePointerClick, 
     TrendingUp, Lock, CheckCircle2, Loader2, List, Plus, Trash2, DollarSign, Pencil 
 } from 'lucide-react';
-import { Service, UpdateBusinessRequest } from '@/types/models';
+import { ServiceResponse, UpdateBusinessRequest } from '@/types';
+import { QUERY_KEYS } from '@/lib/constants';
 import AddServiceModal from '@/components/AddServiceModal';   // Make sure this path is correct
 import EditServiceModal from '@/components/EditServiceModal'; // Make sure this path is correct
 
@@ -23,11 +24,11 @@ export default function BusinessDashboardPage() {
     const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'services' | 'settings'>('overview');
     const [successMessage, setSuccessMessage] = useState('');
     const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
-    const [editingService, setEditingService] = useState<any | null>(null);
+    const [editingService, setEditingService] = useState<ServiceResponse | null>(null);
 
     // --- QUERIES ---
     const { data: business, isLoading } = useQuery({
-        queryKey: ['business', businessId],
+        queryKey: QUERY_KEYS.business(businessId),
         queryFn: async () => {
             const token = await getToken();
             return businessService.getById(businessId, token);
@@ -43,7 +44,7 @@ export default function BusinessDashboardPage() {
         onSuccess: () => {
             setSuccessMessage('Settings saved successfully!');
             setTimeout(() => setSuccessMessage(''), 3000);
-            queryClient.invalidateQueries({ queryKey: ['business', businessId] });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.business(businessId) });
         }
     });
 
@@ -53,7 +54,7 @@ export default function BusinessDashboardPage() {
             return businessService.deleteService(businessId, serviceId, token);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['business', businessId] });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.business(businessId) });
         }
     });
 
@@ -176,7 +177,7 @@ export default function BusinessDashboardPage() {
                             </div>
                         ) : (
                             <div className="grid gap-4">
-                                {business.services.map((service: Service) => (
+                                {business.services.map((service: ServiceResponse) => (
                                     <div key={service.id} className="flex items-center justify-between p-5 bg-white border border-gray-200 rounded-xl hover:border-gray-300 transition-colors group">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3 mb-1">
@@ -241,7 +242,7 @@ export default function BusinessDashboardPage() {
                                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
                                     Category <Lock className="w-3 h-3 text-gray-400"/>
                                 </label>
-                                <input type="text" disabled defaultValue={business.category?.name} className="w-full bg-gray-50 border border-gray-200 text-gray-500 rounded-lg px-4 py-2 cursor-not-allowed" />
+                                <input type="text" disabled defaultValue={business.categoryName} className="w-full bg-gray-50 border border-gray-200 text-gray-500 rounded-lg px-4 py-2 cursor-not-allowed" />
                             </div>
                             <div className="md:col-span-2">
                                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">

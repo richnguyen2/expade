@@ -1,13 +1,14 @@
 import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
-import { X, Tag, AlignLeft, DollarSign, Loader2 } from 'lucide-react';
+import { X, Tag, AlignLeft, DollarSign, Clock, Loader2 } from 'lucide-react';
 import { businessService } from '@/services/businessServices';
-import { Service, UpdateServiceRequest } from '@/types/models';
+import { ServiceResponse, UpdateServiceRequest } from '@/types';
+import { QUERY_KEYS } from '@/lib/constants';
 
 interface EditServiceModalProps {
     businessId: string;
-    service: Service | null;
+    service: ServiceResponse | null;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -24,7 +25,7 @@ export default function EditServiceModal({ businessId, service, isOpen, onClose 
             
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['business', businessId] });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.business(businessId) });
             onClose();
         }
     });
@@ -93,7 +94,7 @@ export default function EditServiceModal({ businessId, service, isOpen, onClose 
                         <label htmlFor="edit-duration" className="block text-sm font-semibold text-gray-700 mb-1.5">Duration</label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <DollarSign className="h-4 w-4 text-gray-400" />
+                                <Clock className="h-4 w-4 text-gray-400" />
                             </div>
                             <input 
                                 type="number" 
