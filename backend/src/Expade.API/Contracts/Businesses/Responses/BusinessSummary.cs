@@ -1,9 +1,9 @@
 namespace Expade.API.Contracts.Businesses.Responses;
 
-public class BusinessSummaryResponse
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string CategoryName { get; set; } = string.Empty;
-    public string Role { get; set; } = string.Empty; // e.g., "Owner", "Manager", "Staff"
-}
+/// <summary>Lightweight projection for a user's own businesses (My Businesses list).</summary>
+public record BusinessSummaryResponse(
+    Guid Id,
+    string Name,
+    string CategoryName,
+    string Role // the requesting user's worker role at this business
+);

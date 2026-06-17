@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { businessRequestService } from '@/services/businessRequestService';
 import { categoryService } from '@/services/categoryServices';
+import { QUERY_KEYS } from '@/lib/constants';
+import type { CreateBusinessRequestRequest } from '@/types';
 import { useAuth } from '@clerk/nextjs';
 import { Building2, Phone, MapPin, Layers, ArrowRight, Loader2 } from 'lucide-react';
 
@@ -14,7 +16,7 @@ export default function BusinessSignup() {
     const [formData, setFormData] = useState({ name: '', phone: '', categoryId: '', address: '' });
     
     const { data, isPending, error } = useQuery({
-        queryKey: ['categories'],
+        queryKey: QUERY_KEYS.categories,
         queryFn: async () => {
             const currentToken = await getToken();
             return categoryService.getAll(currentToken);
@@ -22,12 +24,12 @@ export default function BusinessSignup() {
     });
 
     const mutation = useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (payload: CreateBusinessRequestRequest) => {
             const currentToken = await getToken({ skipCache: true });
-            return businessRequestService.submit(data, currentToken);
+            return businessRequestService.submit(payload, currentToken);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['business-requests'], exact: false });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.businessRequests, exact: false });
             router.push('/home')
         },
         onError: (err) => {
@@ -116,15 +118,11 @@ export default function BusinessSignup() {
                                     <option value="" disabled>
                                         {isPending ? 'Loading categories...' : error ? 'Unable to load categories' : 'Select a primary category'}
                                     </option>
-                                    {data?.map((category: any) => {
-                                        const name = category.name ?? category.Name;
-                                        const id = category.id ?? category.Id;
-                                        return (
-                                            <option key={id} value={id} className="text-gray-800">
-                                                {name}
-                                            </option>
-                                        );
-                                    })}
+                                    {data?.map((category) => (
+                                        <option key={category.id} value={category.id} className="text-gray-800">
+                                            {category.name}
+                                        </option>
+                                    ))}
                                 </select>
                                 {/* Custom Dropdown Arrow */}
                                 <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">

@@ -15,9 +15,8 @@ public class BusinessRequestRepository : IBusinessRequestRepository
 
     public async Task<IEnumerable<BusinessRequest>> GetAllAsync()
     {
-        var query = _db.BusinessRequests.AsQueryable();
-        
         return await _db.BusinessRequests
+        .Include(r => r.Category)
         .OrderByDescending(r => r.CreatedAt)
         .ToListAsync();
     }

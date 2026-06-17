@@ -4,8 +4,9 @@ import { useAuth } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
 import { businessService } from '@/services/businessServices';
 import Link from 'next/link';
-import { ArrowRight, MapPin, Phone, Clock, DollarSign, Star } from 'lucide-react';
-import { Business } from '@/types/models';
+import { ArrowRight, MapPin, Phone, Clock, Star } from 'lucide-react';
+import { BusinessResponse } from '@/types';
+import { QUERY_KEYS } from '@/lib/constants';
 import { use } from 'react';
 
 interface BusinessPageProps {
@@ -16,8 +17,8 @@ export default function BusinessDetailsPage({ params }: BusinessPageProps) {
   const { id } = use(params);
   const { getToken } = useAuth();
 
-  const { data: business, isPending, error } = useQuery<Business>({
-    queryKey: ['business', id],
+  const { data: business, isPending, error } = useQuery<BusinessResponse>({
+    queryKey: QUERY_KEYS.business(id),
     queryFn: async () => {
       const token = await getToken();
       return businessService.getById(id, token);
@@ -61,7 +62,7 @@ export default function BusinessDetailsPage({ params }: BusinessPageProps) {
           <div className="bg-[#708238] px-6 py-10 sm:px-10 text-white">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-sm uppercase tracking-[0.24em] text-[#d6e4be]">{business.category?.name || 'Local Partner'}</p>
+                <p className="text-sm uppercase tracking-[0.24em] text-[#d6e4be]">{business.categoryName || 'Local Partner'}</p>
                 <h1 className="mt-3 text-4xl font-extrabold tracking-tight">{business.name}</h1>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-[#f3f7e3]">{business.description || 'No description available for this business yet.'}</p>
               </div>

@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { businessRequestService } from '@/services/businessRequestService';
-import { Plus, Trash2, ShieldCheck, Briefcase, Users, FileText, Loader2 } from 'lucide-react';
 import { businessService } from '@/services/businessServices';
+import { QUERY_KEYS } from '@/lib/constants';
+import type { CreateBusinessFromRequest, ServiceInput } from '@/types';
+import { Plus, Trash2, ShieldCheck, Briefcase, Users, FileText, Loader2 } from 'lucide-react';
 
 interface OnboardPageProps {
     params: Promise<{ id: string }>;
@@ -19,12 +21,12 @@ export default function OnboardPage({ params }: OnboardPageProps) {
 
     // Form states for the new items required
     const [description, setDescription] = useState('');
-    const [services, setServices] = useState<{ name: string; description: string }[]>([{ name: '', description: '' }]);
+    const [services, setServices] = useState<ServiceInput[]>([{ name: '', description: '' }]);
     const [workers, setWorkers] = useState<{ email: string; role: string }[]>([]);
 
     // 1. Fetch & Verify Request Data
     const { data: requestData, isLoading, error } = useQuery({
-        queryKey: ['onboarding-data', id],
+        queryKey: QUERY_KEYS.onboardingData(id),
         queryFn: async () => {
             const token = await getToken();
             return businessRequestService.getOnboardingData(id, token);
@@ -33,14 +35,14 @@ export default function OnboardPage({ params }: OnboardPageProps) {
     });
 
     const mutation = useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: CreateBusinessFromRequest) => {
             const currentToken = await getToken({ skipCache: true });
             return businessService.createBusinessFromRequest(data, currentToken);
         },
         onSuccess: () => {
             router.push('/home'); // Take them home to see their live listing!
         },
-        onError: (err: any) => {
+        onError: (err: Error) => {
             alert(err.message);
         }
     });
