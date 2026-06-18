@@ -1,46 +1,11 @@
 'use client';
 
-import { businessRequestService } from "@/services/businessRequestService";
-import { BusinessRequestResponse, RequestStatus } from "@/types";
-import { QUERY_KEYS } from "@/lib/constants";
-import { useAuth } from "@clerk/nextjs";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { RequestStatus } from "@/types";
+import { useBusinessRequests, useUpdateRequestStatus } from "@/hooks";
 
 export default function AdminRequestsPage() {
-    const queryClient = useQueryClient();
-    const { getToken } = useAuth();
-
-    const { data: requests = [], isLoading, error } = useQuery<BusinessRequestResponse[]>({
-        queryKey: QUERY_KEYS.businessRequests,
-        queryFn: async () => {
-            const currentToken = await getToken();
-            return businessRequestService.getAll(currentToken);
-        }
-    });
-
-    const mutation = useMutation({
-        mutationFn: async ({ id, status }: { id: string; status: RequestStatus }) => {
-            const currentToken = await getToken();
-            return businessRequestService.updateStatus(id, status, currentToken);
-        },
-        onMutate: async ({ id, status }) => {
-        await queryClient.cancelQueries({ queryKey: QUERY_KEYS.businessRequests });
-        const previousRequests = queryClient.getQueryData<BusinessRequestResponse[]>(QUERY_KEYS.businessRequests);
-
-        queryClient.setQueryData(QUERY_KEYS.businessRequests, (old: BusinessRequestResponse[] = []) =>
-            old.map(r => r.id === id ? { ...r, status } : r)
-        );
-        return { previousRequests };
-        },
-        // If it fails, roll back to the previous state
-        onError: (_err, _newReq, context) => {
-            queryClient.setQueryData(QUERY_KEYS.businessRequests, context?.previousRequests);
-        },
-        // Always refetch after error or success to ensure sync
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.businessRequests });
-        }
-        });
+    const { data: requests = [], isLoading, error } = useBusinessRequests();
+    const mutation = useUpdateRequestStatus();
 
     if (error) return <div>Error loading requests.</div>;
 

@@ -32,7 +32,7 @@ public static class ContractMappings
 
     /// <summary>Public discovery card projection.</summary>
     public static BusinessListItemResponse ToListItemResponse(this Business b) =>
-        new(b.Id, b.Name, b.Description, b.Category?.Name ?? "Unknown", b.Address, b.Phone);
+        new(b.Id, b.Name, b.Description, b.CategoryId, b.Category?.Name ?? "Unknown", b.Address, b.Phone);
 
     /// <summary>My-Businesses projection; Role is the requesting user's role at this business.</summary>
     public static BusinessSummaryResponse ToSummaryResponse(this Business b, Guid userId) =>

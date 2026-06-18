@@ -2,70 +2,46 @@
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@clerk/nextjs';
-import { businessService } from '@/services/businessServices';
-import { 
-    BarChart3, CalendarDays, Settings, Users, MousePointerClick, 
-    TrendingUp, Lock, CheckCircle2, Loader2, List, Plus, Trash2, DollarSign, Pencil 
+import {
+    BarChart3, CalendarDays, Settings, Users, MousePointerClick,
+    TrendingUp, Lock, CheckCircle2, Loader2, List, Plus, Trash2, DollarSign, Pencil
 } from 'lucide-react';
-import { ServiceResponse, UpdateBusinessRequest } from '@/types';
-import { QUERY_KEYS } from '@/lib/constants';
-import AddServiceModal from '@/components/AddServiceModal';   // Make sure this path is correct
-import EditServiceModal from '@/components/EditServiceModal'; // Make sure this path is correct
+import { ServiceResponse } from '@/types';
+import { useBusiness, useUpdateBusiness, useServiceMutations } from '@/hooks';
+import AddServiceModal from '@/components/business/AddServiceModal';
+import EditServiceModal from '@/components/business/EditServiceModal';
 
 export default function BusinessDashboardPage() {
     const params = useParams();
     const businessId = params.id as string;
-    const { getToken } = useAuth();
-    const queryClient = useQueryClient();
-    
+
     // --- STATE ---
     const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'services' | 'settings'>('overview');
     const [successMessage, setSuccessMessage] = useState('');
     const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
     const [editingService, setEditingService] = useState<ServiceResponse | null>(null);
 
-    // --- QUERIES ---
-    const { data: business, isLoading } = useQuery({
-        queryKey: QUERY_KEYS.business(businessId),
-        queryFn: async () => {
-            const token = await getToken();
-            return businessService.getById(businessId, token);
-        }
-    });
-
-    // --- MUTATIONS ---
-    const updateMutation = useMutation({
-        mutationFn: async (formData: UpdateBusinessRequest) => {
-            const token = await getToken();
-            return businessService.updateBusiness(businessId, formData, token);
-        },
-        onSuccess: () => {
-            setSuccessMessage('Settings saved successfully!');
-            setTimeout(() => setSuccessMessage(''), 3000);
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.business(businessId) });
-        }
-    });
-
-    const deleteServiceMutation = useMutation({
-        mutationFn: async (serviceId: string) => {
-            const token = await getToken();
-            return businessService.deleteService(businessId, serviceId, token);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.business(businessId) });
-        }
-    });
+    // --- DATA ---
+    const { data: business, isLoading } = useBusiness(businessId);
+    const updateMutation = useUpdateBusiness(businessId);
+    const { deleteService: deleteServiceMutation } = useServiceMutations(businessId);
 
     // --- HANDLERS ---
     const handleSettingsSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        updateMutation.mutate({
-            phone: formData.get('phone') as string,
-            description: formData.get('description') as string,
-        });
+        updateMutation.mutate(
+            {
+                phone: formData.get('phone') as string,
+                description: formData.get('description') as string,
+            },
+            {
+                onSuccess: () => {
+                    setSuccessMessage('Settings saved successfully!');
+                    setTimeout(() => setSuccessMessage(''), 3000);
+                },
+            },
+        );
     };
 
     if (isLoading) return <div className="p-10 text-center animate-pulse">Loading dashboard...</div>;

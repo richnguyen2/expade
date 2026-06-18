@@ -1,46 +1,22 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { businessRequestService } from '@/services/businessRequestService';
-import { categoryService } from '@/services/categoryServices';
-import { QUERY_KEYS } from '@/lib/constants';
-import type { CreateBusinessRequestRequest } from '@/types';
-import { useAuth } from '@clerk/nextjs';
+import { useCategories, useSubmitBusinessRequest } from '@/hooks';
 import { Building2, Phone, MapPin, Layers, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function BusinessSignup() {
-    const queryClient = useQueryClient();
-    const { getToken } = useAuth();
     const router = useRouter();
     const [formData, setFormData] = useState({ name: '', phone: '', categoryId: '', address: '' });
-    
-    const { data, isPending, error } = useQuery({
-        queryKey: QUERY_KEYS.categories,
-        queryFn: async () => {
-            const currentToken = await getToken();
-            return categoryService.getAll(currentToken);
-        }
-    });
 
-    const mutation = useMutation({
-        mutationFn: async (payload: CreateBusinessRequestRequest) => {
-            const currentToken = await getToken({ skipCache: true });
-            return businessRequestService.submit(payload, currentToken);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.businessRequests, exact: false });
-            router.push('/home')
-        },
-        onError: (err) => {
-            alert('Error: ' + err.message);
-        }
-    });
-
+    const { data, isPending, error } = useCategories();
+    const mutation = useSubmitBusinessRequest();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        mutation.mutate(formData);
+        mutation.mutate(formData, {
+            onSuccess: () => router.push('/home'),
+            onError: (err) => alert('Error: ' + err.message),
+        });
     };
 
     return (

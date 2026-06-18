@@ -1,10 +1,6 @@
 import React from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@clerk/nextjs';
 import { X, Tag, AlignLeft, DollarSign, Loader2, Clock } from 'lucide-react';
-import { businessService } from '@/services/businessServices';
-import { CreateServiceRequest } from '@/types';
-import { QUERY_KEYS } from '@/lib/constants';
+import { useServiceMutations } from '@/hooks';
 
 interface AddServiceModalProps {
     businessId: string;
@@ -13,31 +9,21 @@ interface AddServiceModalProps {
 }
 
 export default function AddServiceModal({ businessId, isOpen, onClose }: AddServiceModalProps) {
-    const { getToken } = useAuth();
-    const queryClient = useQueryClient();
-
-    const addServiceMutation = useMutation({
-        mutationFn: async (newService: CreateServiceRequest) => {
-            const token = await getToken();
-            return businessService.addService(businessId, newService, token);
-            
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.business(businessId) });
-            onClose();
-        }
-    });
+    const { addService: addServiceMutation } = useServiceMutations(businessId);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
 
-        addServiceMutation.mutate({
-            name: formData.get('name') as string,
-            description: formData.get('description') as string,
-            price: Number(formData.get('price')),
-            durationInMinutes: Number(formData.get('durationInMinutes')) || 0,
-        });
+        addServiceMutation.mutate(
+            {
+                name: formData.get('name') as string,
+                description: formData.get('description') as string,
+                price: Number(formData.get('price')),
+                durationInMinutes: Number(formData.get('durationInMinutes')) || 0,
+            },
+            { onSuccess: onClose },
+        );
     };
 
     if (!isOpen) return null;
