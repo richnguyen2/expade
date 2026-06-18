@@ -2,12 +2,8 @@
 
 import { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { useAuth } from '@clerk/nextjs';
-import { businessRequestService } from '@/services/businessRequestService';
-import { businessService } from '@/services/businessServices';
-import { QUERY_KEYS } from '@/lib/constants';
-import type { CreateBusinessFromRequest, ServiceInput } from '@/types';
+import { useOnboardingData, useCreateBusinessFromRequest } from '@/hooks';
+import type { ServiceInput } from '@/types';
 import { Plus, Trash2, ShieldCheck, Briefcase, Users, FileText, Loader2 } from 'lucide-react';
 
 interface OnboardPageProps {
@@ -16,7 +12,6 @@ interface OnboardPageProps {
 
 export default function OnboardPage({ params }: OnboardPageProps) {
     const { id } = use(params);
-    const { getToken } = useAuth();
     const router = useRouter();
 
     // Form states for the new items required
@@ -25,27 +20,9 @@ export default function OnboardPage({ params }: OnboardPageProps) {
     const [workers, setWorkers] = useState<{ email: string; role: string }[]>([]);
 
     // 1. Fetch & Verify Request Data
-    const { data: requestData, isLoading, error } = useQuery({
-        queryKey: QUERY_KEYS.onboardingData(id),
-        queryFn: async () => {
-            const token = await getToken();
-            return businessRequestService.getOnboardingData(id, token);
-        },
-        retry: false
-    });
+    const { data: requestData, isLoading, error } = useOnboardingData(id);
 
-    const mutation = useMutation({
-        mutationFn: async (data: CreateBusinessFromRequest) => {
-            const currentToken = await getToken({ skipCache: true });
-            return businessService.createBusinessFromRequest(data, currentToken);
-        },
-        onSuccess: () => {
-            router.push('/home'); // Take them home to see their live listing!
-        },
-        onError: (err: Error) => {
-            alert(err.message);
-        }
-    });
+    const mutation = useCreateBusinessFromRequest();
 
     // Dynamic List Handlers: Services
     const addService = () => setServices([...services, { name: '', description: '' }]);
@@ -67,12 +44,13 @@ export default function OnboardPage({ params }: OnboardPageProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        mutation.mutate({
-            requestId: id,
-            description,
-            services,
-            workers
-        });
+        mutation.mutate(
+            { requestId: id, description, services, workers },
+            {
+                onSuccess: () => router.push('/home'),
+                onError: (err) => alert(err.message),
+            },
+        );
     };
 
     if (isLoading) {

@@ -1,12 +1,8 @@
 'use client';
 
-import { useAuth } from '@clerk/nextjs';
-import { useQuery } from '@tanstack/react-query';
-import { businessService } from '@/services/businessServices';
+import { useBusiness } from '@/hooks';
 import Link from 'next/link';
 import { ArrowRight, MapPin, Phone, Clock, Star } from 'lucide-react';
-import { BusinessResponse } from '@/types';
-import { QUERY_KEYS } from '@/lib/constants';
 import { use } from 'react';
 
 interface BusinessPageProps {
@@ -15,15 +11,8 @@ interface BusinessPageProps {
 
 export default function BusinessDetailsPage({ params }: BusinessPageProps) {
   const { id } = use(params);
-  const { getToken } = useAuth();
 
-  const { data: business, isPending, error } = useQuery<BusinessResponse>({
-    queryKey: QUERY_KEYS.business(id),
-    queryFn: async () => {
-      const token = await getToken();
-      return businessService.getById(id, token);
-    },
-  });
+  const { data: business, isPending, error } = useBusiness(id);
 
   if (isPending) {
     return (

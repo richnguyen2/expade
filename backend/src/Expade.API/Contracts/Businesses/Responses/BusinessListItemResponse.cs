@@ -5,6 +5,7 @@ public record BusinessListItemResponse(
     Guid Id,
     string Name,
     string Description,
+    Guid CategoryId,
     string CategoryName,
     string Address,
     string Phone

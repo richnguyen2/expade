@@ -1,23 +1,11 @@
 'use client';
 
-import { businessService } from "@/services/businessServices";
-import { BusinessSummaryResponse } from "@/types";
-import { QUERY_KEYS } from "@/lib/constants";
-import { useAuth } from "@clerk/nextjs";
-import { useQuery } from "@tanstack/react-query";
+import { useMyBusinesses } from "@/hooks";
 import { Briefcase, Building2, UserCog } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MyBusinessesPage() {
-    const { getToken } = useAuth();
-
-    const { data: businesses = [], isLoading, error } = useQuery<BusinessSummaryResponse[]>({
-        queryKey: QUERY_KEYS.myBusinesses,
-        queryFn: async () => {
-            const token = await getToken();
-            return businessService.getMyBusinesses(token);
-        }
-    });
+    const { data: businesses = [], isLoading, error } = useMyBusinesses();
 
     if (isLoading) return <div className="p-10 text-center animate-pulse">Loading your dashboard...</div>;
     if (error) return <div className="p-10 text-center text-red-500">Error loading your businesses.</div>;

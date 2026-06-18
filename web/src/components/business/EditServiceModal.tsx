@@ -1,10 +1,7 @@
 import React from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@clerk/nextjs';
 import { X, Tag, AlignLeft, DollarSign, Clock, Loader2 } from 'lucide-react';
-import { businessService } from '@/services/businessServices';
-import { ServiceResponse, UpdateServiceRequest } from '@/types';
-import { QUERY_KEYS } from '@/lib/constants';
+import { ServiceResponse } from '@/types';
+import { useServiceMutations } from '@/hooks';
 
 interface EditServiceModalProps {
     businessId: string;
@@ -14,32 +11,25 @@ interface EditServiceModalProps {
 }
 
 export default function EditServiceModal({ businessId, service, isOpen, onClose }: EditServiceModalProps) {
-    const { getToken } = useAuth();
-    const queryClient = useQueryClient();
-
-    const editServiceMutation = useMutation({
-        mutationFn: async (updatedService: UpdateServiceRequest) => {
-            if (!service) throw new Error("No service selected");
-            const token = await getToken();
-            return businessService.updateService(businessId, service.id, updatedService, token);
-            
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.business(businessId) });
-            onClose();
-        }
-    });
+    const { updateService: editServiceMutation } = useServiceMutations(businessId);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (!service) return;
         const formData = new FormData(e.currentTarget);
 
-        editServiceMutation.mutate({
-            name: formData.get('name') as string,
-            description: formData.get('description') as string,
-            price: Number(formData.get('price')) || 0,
-            durationInMinutes: Number(formData.get('durationInMinutes')) || 0,
-        });
+        editServiceMutation.mutate(
+            {
+                serviceId: service.id,
+                data: {
+                    name: formData.get('name') as string,
+                    description: formData.get('description') as string,
+                    price: Number(formData.get('price')) || 0,
+                    durationInMinutes: Number(formData.get('durationInMinutes')) || 0,
+                },
+            },
+            { onSuccess: onClose },
+        );
     };
 
     if (!isOpen || !service) return null;

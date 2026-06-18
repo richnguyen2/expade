@@ -1,18 +1,13 @@
-import Navbar from '@/components/Navbar';
-import Sidebar from '@/components/Sidebar';
+import Navbar from '@/components/layout/Navbar';
+import Sidebar from '@/components/layout/Sidebar';
 
 export default function HomeLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col h-screen bg-white">
-      {/* Top Navigation spans the whole width */}
+    <div className="flex h-screen flex-col bg-background">
       <Navbar />
-      
-      {/* Bottom section splits between Sidebar and Main Content */}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto bg-muted/30 p-5 sm:p-8">{children}</main>
       </div>
     </div>
   );
