@@ -4,218 +4,179 @@ import { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOnboardingData, useCreateBusinessFromRequest } from '@/hooks';
 import type { ServiceInput } from '@/types';
-import { Plus, Trash2, ShieldCheck, Briefcase, Users, FileText, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import OnboardServices from '@/components/onboard/OnboardServices';
+import OnboardWorkers from '@/components/onboard/OnboardWorkers';
+import { ShieldCheck, FileText, BadgeCheck, Loader2 } from 'lucide-react';
 
 interface OnboardPageProps {
-    params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>;
 }
 
 export default function OnboardPage({ params }: OnboardPageProps) {
-    const { id } = use(params);
-    const router = useRouter();
+  const { id } = use(params);
+  const router = useRouter();
 
-    // Form states for the new items required
-    const [description, setDescription] = useState('');
-    const [services, setServices] = useState<ServiceInput[]>([{ name: '', description: '' }]);
-    const [workers, setWorkers] = useState<{ email: string; role: string }[]>([]);
+  const [description, setDescription] = useState('');
+  const [services, setServices] = useState<ServiceInput[]>([
+    { name: '', description: '', price: 0, durationInMinutes: 0 },
+  ]);
+  const [workers, setWorkers] = useState<{ email: string; role: string }[]>([]);
 
-    // 1. Fetch & Verify Request Data
-    const { data: requestData, isLoading, error } = useOnboardingData(id);
+  const { data: requestData, isLoading, error } = useOnboardingData(id);
+  const mutation = useCreateBusinessFromRequest();
 
-    const mutation = useCreateBusinessFromRequest();
-
-    // Dynamic List Handlers: Services
-    const addService = () => setServices([...services, { name: '', description: '' }]);
-    const removeService = (index: number) => setServices(services.filter((_, i) => i !== index));
-    const updateService = (index: number, field: 'name' | 'description', value: string) => {
-        const updated = [...services];
-        updated[index][field] = value;
-        setServices(updated);
-    };
-
-    // Dynamic List Handlers: Workers
-    const addWorker = () => setWorkers([...workers, { email: '', role: 'Staff' }]);
-    const removeWorker = (index: number) => setWorkers(workers.filter((_, i) => i !== index));
-    const updateWorker = (index: number, email: string) => {
-        const updated = [...workers];
-        updated[index].email = email;
-        setWorkers(updated);
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        mutation.mutate(
-            { requestId: id, description, services, workers },
-            {
-                onSuccess: () => router.push('/home'),
-                onError: (err) => alert(err.message),
-            },
-        );
-    };
-
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-                <Loader2 className="w-10 h-10 animate-spin text-[#708238]" />
-                <p className="mt-4 text-gray-500 font-medium">Verifying authorization link...</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-                <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-md border border-red-100 text-center">
-                    <div className="text-red-500 font-bold text-xl mb-2">Access Denied</div>
-                    <p className="text-gray-600 text-sm">{error.message}</p>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="min-h-screen bg-gray-50/60 py-12 px-4 sm:px-6 lg:px-8 font-sans">
-            <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-                
-                {/* Visual Header */}
-                <div className="bg-[#708238] px-8 py-10 text-white flex items-center justify-between">
-                    <div>
-                        <span className="bg-white/20 text-white text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">Step 2: Activation</span>
-                        <h1 className="text-3xl font-extrabold tracking-tight mt-2">Launch Your Marketplace Profile</h1>
-                        <p className="text-white/80 text-sm mt-1">Finish setting up details for <span className="underline decoration-white/40 font-bold">{requestData?.name}</span></p>
-                    </div>
-                    <ShieldCheck className="w-16 h-16 text-white/20 hidden sm:block shrink-0" />
-                </div>
-
-                <form onSubmit={handleSubmit} className="p-8 space-y-8 divide-y divide-gray-100">
-                    
-                    {/* SECTION 1: Read Only Approved Information */}
-                    <div className="space-y-4">
-                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                            <Briefcase className="w-5 h-5 text-[#708238]" /> Verified Information
-                        </h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-gray-600">
-                            <div><span className="font-semibold text-gray-400 block text-xs uppercase">Category</span> {requestData?.categoryName}</div>
-                            <div><span className="font-semibold text-gray-400 block text-xs uppercase">Phone</span> {requestData?.phone}</div>
-                            <div className="sm:col-span-2"><span className="font-semibold text-gray-400 block text-xs uppercase">Business Address</span> {requestData?.address}</div>
-                        </div>
-                    </div>
-
-                    {/* SECTION 2: Business Description */}
-                    <div className="pt-6 space-y-4">
-                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-[#708238]" /> Marketplace Profile Description
-                        </h2>
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase">Tell clients about your business</label>
-                            <textarea
-                                required
-                                rows={4}
-                                placeholder="Provide a thorough overview of your background, specialties, and hours of operations..."
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#708238]/30 focus:border-[#708238] transition-all text-gray-800"
-                            />
-                        </div>
-                    </div>
-
-                    {/* SECTION 3: Dynamic Services Section */}
-                    <div className="pt-6 space-y-4">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                <Briefcase className="w-5 h-5 text-[#708238]" /> Offered Services
-                            </h2>
-                            <button type="button" onClick={addService} className="flex items-center gap-1.5 text-xs font-bold text-[#708238] hover:text-[#5b6b2e] bg-[#708238]/10 px-3 py-1.5 rounded-lg transition-colors">
-                                <Plus className="w-4 h-4" /> Add Service
-                            </button>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            {services.map((service, index) => (
-                                <div key={index} className="flex gap-3 bg-gray-50/40 p-4 rounded-xl border border-gray-100 relative group">
-                                    <div className="flex-1 space-y-3">
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="Service Name (e.g., Brake Pad Replacement)"
-                                            value={service.name}
-                                            onChange={(e) => updateService(index, 'name', e.target.value)}
-                                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#708238]"
-                                        />
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="Short service description or base pricing details"
-                                            value={service.description}
-                                            onChange={(e) => updateService(index, 'description', e.target.value)}
-                                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#708238]"
-                                        />
-                                    </div>
-                                    {services.length > 1 && (
-                                        <button type="button" onClick={() => removeService(index)} className="text-gray-400 hover:text-red-500 self-center p-2 rounded-lg hover:bg-red-50 transition-colors">
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* SECTION 4: Add Team Members */}
-                    <div className="pt-6 space-y-4">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                <Users className="w-5 h-5 text-[#708238]" /> Team Members <span className="text-xs font-normal text-gray-400">(Optional)</span>
-                            </h2>
-                            <button type="button" onClick={addWorker} className="flex items-center gap-1.5 text-xs font-bold text-[#708238] hover:text-[#5b6b2e] bg-[#708238]/10 px-3 py-1.5 rounded-lg transition-colors">
-                                <Plus className="w-4 h-4" /> Invite Worker
-                            </button>
-                        </div>
-
-                        {workers.length === 0 ? (
-                            <p className="text-xs text-gray-400 italic bg-gray-50 p-3 rounded-xl text-center">You will automatically be assigned as the Manager. Add staff accounts here if needed.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {workers.map((worker, index) => (
-                                    <div key={index} className="flex gap-3 items-center">
-                                        <input
-                                            type="email"
-                                            required
-                                            placeholder="staffmember@email.com"
-                                            value={worker.email}
-                                            onChange={(e) => updateWorker(index, e.target.value)}
-                                            className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#708238]"
-                                        />
-                                        <span className="text-xs px-3 py-2 bg-gray-100 text-gray-500 font-medium rounded-lg border border-gray-200">Staff</span>
-                                        <button type="button" onClick={() => removeWorker(index)} className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Final Actions */}
-                    <div className="pt-8">
-                        <button
-                            type="submit"
-                            disabled={mutation.isPending}
-                            className="w-full flex items-center justify-center gap-2 bg-[#708238] hover:bg-[#5b6b2e] text-white font-bold py-4 px-8 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed text-base"
-                        >
-                            {mutation.isPending ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    <span>Creating Business Environment...</span>
-                                </>
-                            ) : (
-                                <span>Publish Live Environment</span>
-                            )}
-                        </button>
-                    </div>
-
-                </form>
-            </div>
-        </div>
+  // Services
+  const addService = () =>
+    setServices([...services, { name: '', description: '', price: 0, durationInMinutes: 0 }]);
+  const removeService = (index: number) => setServices(services.filter((_, i) => i !== index));
+  const updateService = (
+    index: number,
+    field: 'name' | 'description' | 'price' | 'durationInMinutes',
+    value: string,
+  ) => {
+    setServices((prev) =>
+      prev.map((s, i) => {
+        if (i !== index) return s;
+        if (field === 'price' || field === 'durationInMinutes') return { ...s, [field]: Number(value) || 0 };
+        return { ...s, [field]: value };
+      }),
     );
+  };
+
+  // Workers
+  const addWorker = () => setWorkers([...workers, { email: '', role: 'Staff' }]);
+  const removeWorker = (index: number) => setWorkers(workers.filter((_, i) => i !== index));
+  const updateWorker = (index: number, email: string) => {
+    setWorkers(workers.map((w, i) => (i === index ? { ...w, email } : w)));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    mutation.mutate(
+      { requestId: id, description, services, workers },
+      {
+        onSuccess: () => router.push('/home'),
+        onError: (err) => alert(err.message),
+      },
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-muted/30 text-muted-foreground">
+        <Loader2 className="size-9 animate-spin text-primary" />
+        <p className="text-sm font-medium">Verifying your activation link…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+        <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 text-center shadow-sm">
+          <h1 className="text-xl font-bold text-destructive">Access denied</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const verified = [
+    { label: 'Category', value: requestData?.categoryName, full: false },
+    { label: 'Phone', value: requestData?.phone, full: false },
+    { label: 'Business address', value: requestData?.address, full: true },
+  ];
+
+  return (
+    <div className="min-h-screen bg-muted/30 px-4 py-12">
+      <div className="mx-auto max-w-3xl overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+        {/* Header */}
+        <div className="relative overflow-hidden bg-primary px-8 py-10 text-primary-foreground">
+          <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-white/10" />
+          <div className="pointer-events-none absolute -bottom-24 left-24 size-64 rounded-full bg-black/10" />
+          <div className="relative flex items-center justify-between gap-6">
+            <div>
+              <span className="inline-flex rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider">
+                Step 2 · Activation
+              </span>
+              <h1 className="mt-3 text-3xl font-extrabold tracking-tight">Launch your marketplace profile</h1>
+              <p className="mt-1.5 text-sm text-primary-foreground/85">
+                Finishing setup for <span className="font-bold underline decoration-white/40">{requestData?.name}</span>
+              </p>
+            </div>
+            <ShieldCheck className="hidden size-16 shrink-0 text-white/20 sm:block" />
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-8 p-8">
+          {/* Verified info */}
+          <section className="space-y-3">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+              <BadgeCheck className="size-5 text-primary" /> Verified information
+            </h2>
+            <div className="grid grid-cols-1 gap-4 rounded-xl border border-border bg-muted/40 p-4 sm:grid-cols-2">
+              {verified.map((item) => (
+                <div key={item.label} className={item.full ? 'sm:col-span-2' : undefined}>
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {item.label}
+                  </span>
+                  <span className="mt-0.5 block text-sm font-medium text-foreground">{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Description */}
+          <section className="space-y-3 border-t border-border pt-8">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+              <FileText className="size-5 text-primary" /> Profile description
+            </h2>
+            <div className="space-y-1.5">
+              <Label htmlFor="description">Tell clients about your business</Label>
+              <Textarea
+                id="description"
+                required
+                rows={4}
+                placeholder="Share your background, specialties, and hours of operation…"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </section>
+
+          <OnboardServices
+            services={services}
+            onAdd={addService}
+            onRemove={removeService}
+            onUpdate={updateService}
+          />
+
+          <OnboardWorkers
+            workers={workers}
+            onAdd={addWorker}
+            onRemove={removeWorker}
+            onUpdate={updateWorker}
+          />
+
+          <Button
+            type="submit"
+            disabled={mutation.isPending}
+            className="h-12 w-full rounded-xl text-base font-semibold"
+          >
+            {mutation.isPending ? (
+              <>
+                <Loader2 className="size-5 animate-spin" />
+                Creating your profile…
+              </>
+            ) : (
+              'Publish live profile'
+            )}
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
 }

@@ -82,6 +82,35 @@ public static class WebhookEndpoints
                         await db.SaveChangesAsync();
                     }
                 }
+                else if (eventType == "user.updated")
+                {
+                    var data = root.GetProperty("data");
+                    var id = data.GetProperty("id").GetString();
+
+                    var existing = db.Users.FirstOrDefault(u => u.ExternalId == id);
+                    if (existing != null)
+                    {
+                        // Keep the local role in sync with Clerk's public_metadata.role.
+                        // Clerk is where roles (incl. Admin) are granted, so mirroring it here
+                        // keeps the DB the source of truth for role guards across the API.
+                        if (data.TryGetProperty("public_metadata", out var meta)
+                            && meta.ValueKind == JsonValueKind.Object
+                            && meta.TryGetProperty("role", out var roleProp)
+                            && roleProp.ValueKind == JsonValueKind.String
+                            && Enum.TryParse<UserRole>(roleProp.GetString(), out var role))
+                        {
+                            existing.Role = role;
+                        }
+
+                        // Keep email in sync as well.
+                        if (data.TryGetProperty("email_addresses", out var emails) && emails.GetArrayLength() > 0)
+                        {
+                            existing.Email = emails[0].GetProperty("email_address").GetString() ?? existing.Email;
+                        }
+
+                        await db.SaveChangesAsync();
+                    }
+                }
 
                 return Results.Ok();
             }

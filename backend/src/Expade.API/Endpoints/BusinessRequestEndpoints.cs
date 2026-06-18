@@ -88,8 +88,9 @@ public static class BusinessRequestEndpoints
             {
                  _ = emailService.SendBusinessRequestApprovedEmailAsync(email, user.Username, existingRequest.Name, existingRequest.Id);
 
-                // Update User role in your local DB
-                if (user.Role != UserRole.Admin)
+                // Promote the requester to BusinessOwner — but never touch an Admin,
+                // and skip anyone who is already a BusinessOwner (idempotent).
+                if (user.Role != UserRole.Admin && user.Role != UserRole.BusinessOwner)
                 {
                     user.Role = UserRole.BusinessOwner;
                     await userRepository.UpdateAsync(user);

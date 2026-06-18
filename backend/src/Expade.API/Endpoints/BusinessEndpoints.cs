@@ -143,7 +143,9 @@ public static class BusinessEndpoints
                      newBusiness.Services.Add(new Service
                      {
                          Name = serviceItem.Name,
-                         Description = serviceItem.Description
+                         Description = serviceItem.Description,
+                         Price = serviceItem.Price,
+                         DurationInMinutes = serviceItem.DurationInMinutes
                      });
                  }
 
