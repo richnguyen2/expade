@@ -1,19 +1,10 @@
 import Navbar from '@/components/layout/Navbar';
-import Sidebar from '@/components/layout/Sidebar';
 
 export default function BusinessSignupLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col h-screen bg-white">
-      {/* Top Navigation spans the whole width */}
+    <div className="flex min-h-screen flex-col bg-muted/30">
       <Navbar />
-      
-      {/* Bottom section splits between Sidebar and Main Content */}
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
-      </div>
+      <main className="flex flex-1 items-center justify-center p-4 sm:p-8">{children}</main>
     </div>
   );
 }

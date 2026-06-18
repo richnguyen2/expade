@@ -119,6 +119,8 @@ export interface UpdateServiceRequest {
 export interface ServiceInput {
   name: string;
   description: string;
+  price: number;
+  durationInMinutes: number;
 }
 
 export interface WorkerInput {

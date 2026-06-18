@@ -6,5 +6,5 @@ public record CreateBusinessFromRequest(
     List<WorkerInput> Workers
 );
 
-public record ServiceInput(string Name, string Description);
+public record ServiceInput(string Name, string Description, decimal Price, int DurationInMinutes);
 public record WorkerInput(string Email);
