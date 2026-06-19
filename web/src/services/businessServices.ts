@@ -3,6 +3,8 @@ import type {
   BusinessResponse,
   BusinessListItemResponse,
   BusinessSummaryResponse,
+  BusinessHoursInput,
+  BusinessHoursResponse,
   CreateBusinessFromRequest,
   CreateServiceRequest,
   ServiceResponse,
@@ -34,4 +36,16 @@ export const businessService = {
 
   deleteService: (id: string, serviceId: string, token: string | null) =>
     apiClient.delete(`/businesses/${id}/services/${serviceId}`, token),
+
+  getHours: (id: string, token: string | null) =>
+    apiClient.get<BusinessHoursResponse[]>(`/businesses/${id}/hours`, token),
+
+  updateHours: (id: string, hours: BusinessHoursInput[], token: string | null) =>
+    apiClient.put<void>(`/businesses/${id}/hours`, { hours }, token),
+
+  getAvailability: (businessId: string, serviceId: string, date: string, token: string | null) =>
+    apiClient.get<string[]>(
+      `/businesses/${businessId}/availability?serviceId=${serviceId}&date=${date}`,
+      token,
+    ),
 };

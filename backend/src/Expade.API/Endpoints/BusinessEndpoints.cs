@@ -1,9 +1,11 @@
 using Expade.Core.Entities;
 using Expade.Core.Interfaces;
 using Expade.API.Contracts.Businesses.Requests;
+using Expade.API.Contracts.Businesses.Responses;
 using System.Security.Claims;
 using Expade.Core.Enums;
 using Expade.API.Mappings;
+using Expade.API.Services;
 
 namespace Expade.API.Endpoints;
 
@@ -122,6 +124,7 @@ public static class BusinessEndpoints
                      Address = request.Address,
                      Latitude = request.Latitude,
                      Longitude = request.Longitude,
+                     TimeZoneId = request.TimeZoneId,
                      CategoryId = request.CategoryId,
                      Description = contract.Description,
                      RequestId = request.Id
@@ -168,7 +171,20 @@ public static class BusinessEndpoints
                      });
                  }
 
-                 // 6. Save parent graph via repository 
+                 // Weekly operating hours are set by the owner during onboarding (required),
+                 // so a live business never displays defaulted/incorrect hours.
+                 foreach (var h in contract.Hours)
+                 {
+                     newBusiness.Hours.Add(new BusinessHours
+                     {
+                         DayOfWeek = (DayOfWeek)h.DayOfWeek,
+                         IsOpen = h.IsOpen,
+                         OpenTime = TimeOnly.TryParse(h.Open, out var open) ? open : new TimeOnly(9, 0),
+                         CloseTime = TimeOnly.TryParse(h.Close, out var close) ? close : new TimeOnly(17, 0)
+                     });
+                 }
+
+                 // 6. Save parent graph via repository
                  // This automatically handles the database transaction and inserts child dependencies
                  await businessRepository.AddAsync(newBusiness);
 
@@ -294,5 +310,82 @@ public static class BusinessEndpoints
             return Results.Ok(serviceToUpdate.ToResponse());
         })
         .RequireAuthorization("BusinessOwnerOnly");
+
+        // ---- Weekly operating hours ----
+
+        // GET hours — always returns all 7 days (missing days fall back to a closed default).
+        group.MapGet("/{id:guid}/hours", async (Guid id, IBusinessRepository businessRepository) =>
+        {
+            var existing = (await businessRepository.GetHoursAsync(id)).ToDictionary(h => h.DayOfWeek);
+
+            var week = Enumerable.Range(0, 7).Select(d =>
+            {
+                var day = (DayOfWeek)d;
+                return existing.TryGetValue(day, out var h)
+                    ? h.ToResponse()
+                    : new BusinessHoursResponse(d, false, "09:00", "17:00");
+            });
+
+            return Results.Ok(week);
+        }).RequireAuthorization();
+
+        // PUT hours — managers only. Replaces the full week.
+        group.MapPut("/{id:guid}/hours", async (
+            Guid id,
+            UpdateBusinessHoursRequest request,
+            ClaimsPrincipal userPrincipal,
+            IUserRepository userRepository,
+            IBusinessRepository businessRepository) =>
+        {
+            var clerkId = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (clerkId == null) return Results.Unauthorized();
+
+            var user = await userRepository.GetByExternalIdAsync(clerkId);
+            if (user == null) return Results.NotFound("User not found.");
+
+            var business = await businessRepository.GetByIdAsync(id);
+            if (business == null) return Results.NotFound("Business not found.");
+
+            var workerRecord = business.Workers.FirstOrDefault(w => w.UserId == user.Id);
+            if (workerRecord == null || workerRecord.Role != WorkerRole.Manager) return Results.Forbid();
+
+            var hours = request.Hours.Select(h => new BusinessHours
+            {
+                DayOfWeek = (DayOfWeek)h.DayOfWeek,
+                IsOpen = h.IsOpen,
+                OpenTime = TimeOnly.TryParse(h.Open, out var open) ? open : new TimeOnly(9, 0),
+                CloseTime = TimeOnly.TryParse(h.Close, out var close) ? close : new TimeOnly(17, 0)
+            });
+
+            await businessRepository.ReplaceHoursAsync(id, hours);
+            return Results.NoContent();
+        }).RequireAuthorization("BusinessOwnerOnly");
+
+        // GET available booking slots for a service on a date (slots stepped by service duration).
+        group.MapGet("/{id:guid}/availability", async (
+            Guid id,
+            Guid serviceId,
+            DateOnly date,
+            IBusinessRepository businessRepository,
+            IAppointmentRepository appointmentRepository) =>
+        {
+            var business = await businessRepository.GetByIdAsync(id);
+            if (business == null) return Results.NotFound("Business not found.");
+
+            var service = business.Services.FirstOrDefault(s => s.Id == serviceId);
+            if (service == null) return Results.NotFound("Service not found.");
+
+            // Business-specific model: auto-assign the Manager (fallback first worker).
+            var worker = business.Workers.FirstOrDefault(w => w.Role == WorkerRole.Manager)
+                         ?? business.Workers.FirstOrDefault();
+            if (worker == null) return Results.Ok(Array.Empty<DateTimeOffset>());
+
+            var dayHours = business.Hours.FirstOrDefault(h => h.DayOfWeek == date.DayOfWeek);
+            var existing = await appointmentRepository.GetByWorkerAndDateAsync(worker.Id, date);
+
+            var slots = SlotGenerator.Generate(
+                dayHours, service.DurationInMinutes, date, existing, DateTimeOffset.UtcNow, business.TimeZoneId);
+            return Results.Ok(slots);
+        }).RequireAuthorization();
     }
 }

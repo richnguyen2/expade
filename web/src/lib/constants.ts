@@ -9,4 +9,8 @@ export const QUERY_KEYS = {
   categories: ['categories'] as const,
   businessRequests: ['business-requests'] as const,
   onboardingData: (id: string) => ['onboarding-data', id] as const,
+  businessHours: (id: string) => ['business-hours', id] as const,
+  availability: (businessId: string, serviceId: string, date: string) =>
+    ['availability', businessId, serviceId, date] as const,
+  myAppointments: ['my-appointments'] as const,
 };

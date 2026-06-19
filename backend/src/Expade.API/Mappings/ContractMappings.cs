@@ -1,3 +1,4 @@
+using Expade.API.Contracts.Appointments.Responses;
 using Expade.API.Contracts.Businesses.Responses;
 using Expade.API.Contracts.BusinessRequests.Responses;
 using Expade.Core.Entities;
@@ -26,6 +27,7 @@ public static class ContractMappings
             b.Phone,
             b.Address,
             b.Category?.Name ?? "Unknown",
+            b.TimeZoneId,
             b.Services.Select(s => s.ToResponse()).ToList(),
             b.Workers.Select(w => w.ToResponse()).ToList()
         );
@@ -48,4 +50,21 @@ public static class ContractMappings
 
     public static BusinessRequestOnboardResponse ToOnboardResponse(this BusinessRequest r) =>
         new(r.Id, r.Name, r.Phone, r.Address, r.CategoryId, r.Category?.Name ?? "Unknown");
+
+    public static BusinessHoursResponse ToResponse(this BusinessHours h) =>
+        new((int)h.DayOfWeek, h.IsOpen, h.OpenTime.ToString("HH:mm"), h.CloseTime.ToString("HH:mm"));
+
+    public static AppointmentResponse ToResponse(this Appointment a) =>
+        new(
+            a.Id,
+            a.Service.BusinessId,
+            a.Service.Business?.Name ?? "Unknown",
+            a.Service.Name,
+            a.Service.Price,
+            a.Service.DurationInMinutes,
+            a.Worker?.User?.Username ?? a.Worker?.JobTitle ?? "Staff",
+            a.StartDateTime,
+            a.Service.Business?.TimeZoneId ?? "America/New_York",
+            a.Status.ToString()
+        );
 }

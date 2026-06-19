@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import OnboardServices from '@/components/onboard/OnboardServices';
 import OnboardWorkers from '@/components/onboard/OnboardWorkers';
+import OnboardHours from '@/components/onboard/OnboardHours';
 import { ShieldCheck, FileText, BadgeCheck, Loader2 } from 'lucide-react';
 
 interface OnboardPageProps {
@@ -24,6 +25,15 @@ export default function OnboardPage({ params }: OnboardPageProps) {
     { name: '', description: '', price: 0, durationInMinutes: 0 },
   ]);
   const [workers, setWorkers] = useState<{ email: string; role: string }[]>([]);
+  const [hours, setHours] = useState([
+    { dayOfWeek: 0, isOpen: false, open: '09:00', close: '17:00' },
+    { dayOfWeek: 1, isOpen: true,  open: '09:00', close: '17:00' },
+    { dayOfWeek: 2, isOpen: true,  open: '09:00', close: '17:00' },
+    { dayOfWeek: 3, isOpen: true,  open: '09:00', close: '17:00' },
+    { dayOfWeek: 4, isOpen: true,  open: '09:00', close: '17:00' },
+    { dayOfWeek: 5, isOpen: true,  open: '09:00', close: '17:00' },
+    { dayOfWeek: 6, isOpen: false, open: '10:00', close: '15:00' },
+  ]);
 
   const { data: requestData, isLoading, error } = useOnboardingData(id);
   const mutation = useCreateBusinessFromRequest();
@@ -56,7 +66,7 @@ export default function OnboardPage({ params }: OnboardPageProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     mutation.mutate(
-      { requestId: id, description, services, workers },
+      { requestId: id, description, services, workers, hours },
       {
         onSuccess: () => router.push('/home'),
         onError: (err) => alert(err.message),
@@ -160,6 +170,8 @@ export default function OnboardPage({ params }: OnboardPageProps) {
             onRemove={removeWorker}
             onUpdate={updateWorker}
           />
+
+          <OnboardHours hours={hours} onChange={setHours} />
 
           <Button
             type="submit"

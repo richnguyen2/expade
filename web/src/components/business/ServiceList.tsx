@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import type { ServiceResponse } from '@/types';
 
 interface ServiceListProps {
+  businessId: string;
   services: ServiceResponse[];
 }
 
-export default function ServiceList({ services }: ServiceListProps) {
+export default function ServiceList({ businessId, services }: ServiceListProps) {
   return (
     <section id="services" className="space-y-5">
       <div>
@@ -48,7 +49,7 @@ export default function ServiceList({ services }: ServiceListProps) {
               </div>
 
               <div className="mt-5 flex justify-end">
-                <Link href={`/appointments/${service.id}`}>
+                <Link href={`/appointments/${service.id}?businessId=${businessId}`}>
                   <Button className="h-10 rounded-xl px-5 text-sm font-semibold">Book appointment</Button>
                 </Link>
               </div>
