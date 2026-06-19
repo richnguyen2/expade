@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<Worker> Workers => Set<Worker>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<BusinessHours> BusinessHours => Set<BusinessHours>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -70,6 +71,18 @@ public class AppDbContext : DbContext
             .HasForeignKey(s => s.BusinessId)
             .OnDelete(DeleteBehavior.Cascade); // Deleting a business deletes its services
         
+        // 1-to-Many: Business -> Hours (deleting a business deletes its hours)
+        modelBuilder.Entity<BusinessHours>()
+            .HasOne(h => h.Business)
+            .WithMany(b => b.Hours)
+            .HasForeignKey(h => h.BusinessId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // One hours row per (business, day)
+        modelBuilder.Entity<BusinessHours>()
+            .HasIndex(h => new { h.BusinessId, h.DayOfWeek })
+            .IsUnique();
+
         // 1-to-Many: Service -> Appointments
         modelBuilder.Entity<Appointment>()
             .HasOne(a => a.Service)

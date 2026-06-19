@@ -24,6 +24,7 @@ builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped<IBusinessRequestRepository, BusinessRequestRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 builder.Services.AddCors(options =>
@@ -100,6 +101,7 @@ app.UseAuthorization();
 app.MapBusinessEndpoints();
 app.MapBusinessRequestEndpoints();
 app.MapCategoryEndpoints();
+app.MapAppointmentEndpoints();
 app.MapWebhookEndpoints();
 
 app.Run();

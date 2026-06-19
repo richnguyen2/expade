@@ -1,7 +1,7 @@
 // These interfaces mirror the backend API contracts exactly (Expade.API.Contracts).
 // They describe the shapes that actually cross the wire — not the EF entity graph.
 
-import { RequestStatus } from './enums';
+import { RequestStatus, AppointmentStatus } from './enums';
 
 /* ------------------------------------------------------------------ */
 /* Shared                                                              */
@@ -41,6 +41,8 @@ export interface BusinessResponse {
   phone: string;
   address: string;
   categoryName: string;
+  /** IANA timezone (e.g. "America/Chicago"). Times are displayed in this zone, not the viewer's. */
+  timeZoneId: string;
   services: ServiceResponse[];
   workers: WorkerResponse[];
 }
@@ -127,9 +129,43 @@ export interface WorkerInput {
   email: string;
 }
 
+/** One day of weekly hours. open/close are "HH:mm" (24h); dayOfWeek 0=Sunday..6=Saturday. */
+export interface BusinessHoursInput {
+  dayOfWeek: number;
+  isOpen: boolean;
+  open: string;
+  close: string;
+}
+
+export type BusinessHoursResponse = BusinessHoursInput;
+
 export interface CreateBusinessFromRequest {
   requestId: string;
   description: string;
   services: ServiceInput[];
   workers: WorkerInput[];
+  hours: BusinessHoursInput[];
+}
+
+/* ------------------------------------------------------------------ */
+/* Appointments                                                        */
+/* ------------------------------------------------------------------ */
+
+export interface AppointmentResponse {
+  id: string;
+  businessId: string;
+  businessName: string;
+  serviceName: string;
+  price: number;
+  durationInMinutes: number;
+  workerName: string;
+  startDateTime: string;
+  /** IANA timezone of the business; format the time in this zone, not the viewer's. */
+  timeZoneId: string;
+  status: AppointmentStatus;
+}
+
+export interface CreateAppointmentRequest {
+  serviceId: string;
+  startDateTime: string;
 }

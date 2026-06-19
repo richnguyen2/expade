@@ -2,15 +2,16 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { BarChart3, CalendarDays, List, Users, Settings } from 'lucide-react';
+import { BarChart3, CalendarDays, List, Users, Clock, Settings } from 'lucide-react';
 import OverviewTab from '@/components/business/dashboard/OverviewTab';
 import ScheduleTab from '@/components/business/dashboard/ScheduleTab';
 import ServicesTab from '@/components/business/dashboard/ServicesTab';
 import TeamTab from '@/components/business/dashboard/TeamTab';
 import SettingsTab from '@/components/business/dashboard/SettingsTab';
+import HoursTab from '@/components/business/dashboard/HoursTab';
 import type { BusinessResponse } from '@/types';
 
-const TABS = ['overview', 'schedule', 'services', 'team', 'settings'] as const;
+const TABS = ['overview', 'schedule', 'services', 'team', 'hours', 'settings'] as const;
 type TabValue = (typeof TABS)[number];
 
 interface DashboardTabsProps {
@@ -46,6 +47,9 @@ export default function DashboardTabs({ business }: DashboardTabsProps) {
         <TabsTrigger value="team">
           <Users /> Team
         </TabsTrigger>
+        <TabsTrigger value="hours">
+          <Clock /> Hours
+        </TabsTrigger>
         <TabsTrigger value="settings">
           <Settings /> Settings
         </TabsTrigger>
@@ -62,6 +66,9 @@ export default function DashboardTabs({ business }: DashboardTabsProps) {
       </TabsContent>
       <TabsContent value="team" className="mt-6">
         <TeamTab business={business} />
+      </TabsContent>
+      <TabsContent value="hours" className="mt-6">
+        <HoursTab businessId={business.id} />
       </TabsContent>
       <TabsContent value="settings" className="mt-6">
         <SettingsTab business={business} />

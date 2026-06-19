@@ -3,7 +3,7 @@
 import { use } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useBusiness } from '@/hooks';
+import { useBusiness, useBusinessHours } from '@/hooks';
 import { Button } from '@/components/ui/button';
 import BusinessHero from '@/components/business/BusinessHero';
 import ServiceList from '@/components/business/ServiceList';
@@ -15,8 +15,9 @@ interface BusinessPageProps {
 export default function BusinessDetailsPage({ params }: BusinessPageProps) {
   const { id } = use(params);
   const { data: business, isPending, error } = useBusiness(id);
+  const { data: hours, isLoading } = useBusinessHours(id);
 
-  if (isPending) {
+  if (isPending || isLoading) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-muted-foreground">
         <Loader2 className="size-8 animate-spin text-primary" />
@@ -25,7 +26,7 @@ export default function BusinessDetailsPage({ params }: BusinessPageProps) {
     );
   }
 
-  if (error || !business) {
+  if (error || !business || !hours) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
         <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 text-center shadow-sm">
@@ -51,7 +52,7 @@ export default function BusinessDetailsPage({ params }: BusinessPageProps) {
         Back to discover
       </Link>
 
-      <BusinessHero business={business} />
+      <BusinessHero business={business} hours={hours} />
 
       {business.description && (
         <section className="space-y-3">
@@ -60,7 +61,7 @@ export default function BusinessDetailsPage({ params }: BusinessPageProps) {
         </section>
       )}
 
-      <ServiceList services={business.services} />
+      <ServiceList businessId={business.id} services={business.services} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using Expade.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 
@@ -15,18 +16,23 @@ public class OpenCageGeocodingService : IGeocodingService
         _apiKey = config["OpenCageApiKey"]!;
     }
 
-    public async Task<(double Lat, double Lon)?> GetCoordinatesAsync(string address)
+    public async Task<GeocodeResult?> GetCoordinatesAsync(string address)
     {
         var url = $"https://api.opencagedata.com/geocode/v1/json?q={Uri.EscapeDataString(address)}&key={_apiKey}";
         var response = await _httpClient.GetFromJsonAsync<OpenCageResponse>(url);
-        
+
         var result = response?.Results?.FirstOrDefault();
         if (result == null) return null;
 
-        return (result.Geometry.Lat, result.Geometry.Lng);
+        // OpenCage returns the IANA timezone in annotations.timezone.name (e.g. "America/Chicago").
+        var timeZoneId = result.Annotations?.Timezone?.Name;
+
+        return new GeocodeResult(result.Geometry.Lat, result.Geometry.Lng, timeZoneId);
     }
 }
 
 public record OpenCageResponse(List<OpenCageResult> Results);
-public record OpenCageResult(OpenCageGeometry Geometry);
+public record OpenCageResult(OpenCageGeometry Geometry, OpenCageAnnotations? Annotations);
 public record OpenCageGeometry(double Lat, double Lng);
+public record OpenCageAnnotations([property: JsonPropertyName("timezone")] OpenCageTimezone? Timezone);
+public record OpenCageTimezone([property: JsonPropertyName("name")] string? Name);

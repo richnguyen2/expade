@@ -7,6 +7,7 @@ public record BusinessResponse(
     string Phone,
     string Address,
     string CategoryName,
+    string TimeZoneId,
     List<ServiceResponse> Services,
     List<WorkerResponse> Workers
 );

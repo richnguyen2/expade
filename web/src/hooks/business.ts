@@ -3,6 +3,7 @@ import { useAuth } from '@clerk/nextjs';
 import { businessService } from '@/services/businessServices';
 import { QUERY_KEYS } from '@/lib/constants';
 import type {
+  BusinessHoursInput,
   CreateBusinessFromRequest,
   CreateServiceRequest,
   UpdateBusinessRequest,
@@ -83,4 +84,37 @@ export function useServiceMutations(businessId: string) {
   });
 
   return { addService, updateService, deleteService };
+}
+
+/** Weekly operating hours for a business. */
+export function useBusinessHours(businessId: string) {
+  const { getToken } = useAuth();
+  return useQuery({
+    queryKey: QUERY_KEYS.businessHours(businessId),
+    queryFn: async () => businessService.getHours(businessId, await getToken()),
+    enabled: Boolean(businessId),
+  });
+}
+
+/** Replace all 7 days of business hours (Manager only). */
+export function useUpdateBusinessHours(businessId: string) {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (hours: BusinessHoursInput[]) =>
+      businessService.updateHours(businessId, hours, await getToken()),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.businessHours(businessId) }),
+  });
+}
+
+/** Available booking slots for a service on a specific date. */
+export function useAvailability(businessId: string, serviceId: string, date: string) {
+  const { getToken } = useAuth();
+  return useQuery({
+    queryKey: QUERY_KEYS.availability(businessId, serviceId, date),
+    queryFn: async () =>
+      businessService.getAvailability(businessId, serviceId, date, await getToken()),
+    enabled: Boolean(businessId && serviceId && date),
+  });
 }

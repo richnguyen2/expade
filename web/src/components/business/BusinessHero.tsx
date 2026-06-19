@@ -1,22 +1,34 @@
 import { MapPin, Phone, Sparkles, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { BusinessResponse } from '@/types';
+import type { BusinessHoursResponse, BusinessResponse } from '@/types';
 
 interface BusinessHeroProps {
   business: BusinessResponse;
+  hours: BusinessHoursResponse[];
 }
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export default function BusinessHero({ business }: BusinessHeroProps) {
-  const facts = [
-    { icon: MapPin, label: 'Location', value: business.address },
-    { icon: Phone, label: 'Contact', value: business.phone },
-    { icon: Sparkles, label: 'Services', value: `${business.services.length} available` },
-  ];
+export default function BusinessHero({ business, hours }: BusinessHeroProps) {
+  const formatTime = (time: string) => {
+    if (!time) return 'Closed'; // Fallback in case a time is missing
 
+    const [hoursStr, minutes] = time.split(':');
+    const hours = parseInt(hoursStr, 10);
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+
+    const formattedHours = hours % 12 || 12;
+
+    return `${formattedHours}:${minutes} ${ampm}`;
+  };
+  const sortedHours = [...hours].sort((a, b) => {
+    const weightA = a.dayOfWeek === 0 ? 7 : a.dayOfWeek;
+    const weightB = b.dayOfWeek === 0 ? 7 : b.dayOfWeek;
+    return weightA - weightB;
+  });
   return (
-    <section className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+    <section className="overflow-hidden rounded-3xl border border-border bg-card">
       {/* Banner */}
-      <div className="relative bg-primary px-6 py-10 text-primary-foreground sm:px-10">
+      <div className="relative bg-primary px-6 py-14 text-primary-foreground sm:px-10">
         <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-white/10" />
         <div className="pointer-events-none absolute -bottom-24 left-24 size-64 rounded-full bg-black/10" />
 
@@ -31,26 +43,48 @@ export default function BusinessHero({ business }: BusinessHeroProps) {
               <Star className="size-4 fill-amber-300 text-amber-300" />
               4.8
               <span className="text-primary-foreground/60">·</span>
-              <span className="font-medium text-primary-foreground/80">Popular local provider</span>
+              <span className="font-medium text-primary-foreground/80">2.5 mi</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Quick facts */}
-      <div className="grid gap-px bg-border sm:grid-cols-3">
-        {facts.map((fact) => {
-          const Icon = fact.icon;
-          return (
-            <div key={fact.label} className="bg-card p-5">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <Icon className="size-4 text-primary" />
-                {fact.label}
+      <div className="grid gap-px bg-border sm:grid-cols-2">
+        <div className="bg-card p-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Location
+          </div>
+          <p className="mt-2 text-sm font-medium text-foreground">{business.address}</p>
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-8">
+            Contact
+          </div>
+          <p className="mt-2 text-sm font-medium text-foreground">{business.phone}</p>
+        </div>
+        <div className="bg-card p-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Hours
+          </div>
+          <div className="mt-2 grid gap-x-8 gap-y-2 sm:grid-cols-2 sm:grid-rows-4 sm:grid-flow-col">
+            {sortedHours.map((day) => (
+              <div
+                key={day.dayOfWeek}
+                className="flex justify-between sm:justify-start sm:gap-2"
+              >
+                <span className="text-sm font-semibold text-foreground w-24">
+                  {DAY_NAMES[day.dayOfWeek]}
+                </span>
+                {day.isOpen ? (
+                  <span className="text-sm text-foreground">
+                    {formatTime(day.open)} - {formatTime(day.close)}
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Closed</span>
+                )}
               </div>
-              <p className="mt-2 truncate text-sm font-medium text-foreground">{fact.value}</p>
-            </div>
-          );
-        })}
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

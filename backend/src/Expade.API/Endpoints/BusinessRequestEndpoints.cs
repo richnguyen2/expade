@@ -49,8 +49,11 @@ public static class BusinessRequestEndpoints
                 CategoryId = request.CategoryId,
                 Address = request.Address,
                 Phone = request.Phone,
-                Latitude = coordinates.Value.Lat,
-                Longitude = coordinates.Value.Lon,
+                Latitude = coordinates.Lat,
+                Longitude = coordinates.Lon,
+                TimeZoneId = string.IsNullOrWhiteSpace(coordinates.TimeZoneId)
+                    ? "America/New_York"
+                    : coordinates.TimeZoneId,
                 UserId = user.Id,
             };
 

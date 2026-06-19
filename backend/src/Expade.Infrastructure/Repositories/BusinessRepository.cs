@@ -14,13 +14,22 @@ public class BusinessRepository : IBusinessRepository
         _context = context;
     }
 
-    public async Task<Business?> GetByIdAsync(Guid id) 
+    public async Task<Business?> GetByIdAsync(Guid id)
         => await _context.Businesses
             .Include(b => b.Category)
             .Include(b => b.Services)
             .Include(b => b.Workers)
             .ThenInclude(w => w.User)
+            .Include(b => b.Hours)
             .FirstOrDefaultAsync(b => b.Id == id);
+    public async Task<Business?> GetByServiceIdAsync(Guid serviceId)
+        => await _context.Businesses
+            .Include(b => b.Services)
+            .Include(b => b.Workers)
+            .ThenInclude(w => w.User)
+            .Include(b => b.Hours)
+            .FirstOrDefaultAsync(b => b.Services.Any(s => s.Id == serviceId));
+
     public async Task<IEnumerable<Business>> GetBusinessesByUserIdAsync(Guid userId)
 {
     return await _context.Businesses
@@ -69,5 +78,27 @@ public class BusinessRepository : IBusinessRepository
     public async Task<bool> ExistsByRequestIdAsync(Guid requestId)
     {
         return await _context.Businesses.AnyAsync(b => b.RequestId == requestId);
+    }
+
+    public async Task<IEnumerable<BusinessHours>> GetHoursAsync(Guid businessId)
+    {
+        return await _context.BusinessHours
+            .Where(h => h.BusinessId == businessId)
+            .OrderBy(h => h.DayOfWeek)
+            .ToListAsync();
+    }
+
+    public async Task ReplaceHoursAsync(Guid businessId, IEnumerable<BusinessHours> hours)
+    {
+        var existing = _context.BusinessHours.Where(h => h.BusinessId == businessId);
+        _context.BusinessHours.RemoveRange(existing);
+
+        foreach (var h in hours)
+        {
+            h.BusinessId = businessId;
+            _context.BusinessHours.Add(h);
+        }
+
+        await _context.SaveChangesAsync();
     }
 }
