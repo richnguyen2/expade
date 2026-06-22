@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
@@ -21,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Expade.Infrastructure\Expade.Infrastructure.csproj" />
     <ProjectReference Include="..\Expade.Core\Expade.Core.csproj" />
+    <ProjectReference Include="..\Expade.Application\Expade.Application.csproj" />
   </ItemGroup>
 
 </Project>

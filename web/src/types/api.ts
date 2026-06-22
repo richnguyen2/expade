@@ -159,6 +159,7 @@ export interface AppointmentResponse {
   price: number;
   durationInMinutes: number;
   workerName: string;
+  clientName: string;
   startDateTime: string;
   /** IANA timezone of the business; format the time in this zone, not the viewer's. */
   timeZoneId: string;
@@ -168,4 +169,23 @@ export interface AppointmentResponse {
 export interface CreateAppointmentRequest {
   serviceId: string;
   startDateTime: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* Blocked times                                                       */
+/* ------------------------------------------------------------------ */
+
+export interface BlockedTimeResponse {
+  id: string;
+  startDateTime: string;
+  endDateTime: string;
+  reason: string | null;
+}
+
+/** Date + wall-clock "HH:mm" times; interpreted in the business's timezone server-side. */
+export interface CreateBlockedTimeRequest {
+  date: string;
+  start: string;
+  end: string;
+  reason?: string;
 }

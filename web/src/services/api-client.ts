@@ -21,8 +21,7 @@ async function request<TResponse>(
   });
 
   if (!res.ok) {
-    const errorBody = await res.json().catch(() => ({}));
-    throw new Error(errorBody.message || 'API request failed');
+    throw new Error(await extractErrorMessage(res));
   }
 
   // 204 No Content / DELETE responses have no JSON body.
@@ -30,6 +29,31 @@ async function request<TResponse>(
     return undefined as TResponse;
   }
   return (await res.json()) as TResponse;
+}
+
+/**
+ * Pull a human-readable message out of an error response. The backend returns a few shapes:
+ * a bare string (`Results.BadRequest("...")`), ProblemDetails (`{ title, detail }`), or a
+ * validation problem (`{ errors }`). Falls back to the status text.
+ */
+async function extractErrorMessage(res: Response): Promise<string> {
+  const raw = await res.text().catch(() => '');
+  if (raw) {
+    try {
+      const body = JSON.parse(raw);
+      if (typeof body === 'string') return body;
+      if (body?.detail) return body.detail;
+      if (body?.message) return body.message;
+      if (body?.errors && typeof body.errors === 'object') {
+        const first = Object.values(body.errors).flat()[0];
+        if (typeof first === 'string') return first;
+      }
+      if (body?.title) return body.title;
+    } catch {
+      return raw; // plain-text body
+    }
+  }
+  return `Request failed (${res.status})`;
 }
 
 export const apiClient = {

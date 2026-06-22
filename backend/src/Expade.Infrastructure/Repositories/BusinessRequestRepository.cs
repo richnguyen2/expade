@@ -24,6 +24,11 @@ public class BusinessRequestRepository : IBusinessRequestRepository
     public async Task<BusinessRequest?> GetByIdAsync(Guid id) =>
         await _db.BusinessRequests.FindAsync(id);
 
+    public async Task<BusinessRequest?> GetByIdWithCategoryAsync(Guid id) =>
+        await _db.BusinessRequests
+            .Include(r => r.Category)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
     public async Task AddAsync(BusinessRequest request)
     {
         await _db.BusinessRequests.AddAsync(request);

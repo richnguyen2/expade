@@ -1,6 +1,6 @@
 using Expade.Core.Entities;
 
-namespace Expade.API.Services;
+namespace Expade.Core.Services;
 
 public static class SlotGenerator
 {
@@ -15,6 +15,7 @@ public static class SlotGenerator
         int serviceDurationMinutes,
         DateOnly date,
         IEnumerable<Appointment> existing,
+        IEnumerable<BlockedTime> blocked,
         DateTimeOffset now,
         string timeZoneId)
     {
@@ -28,11 +29,14 @@ public static class SlotGenerator
         var open = ToInstant(date, dayHours.OpenTime, tz);
         var close = ToInstant(date, dayHours.CloseTime, tz);
 
+        // Both existing appointments and manual blocks make a window unavailable.
         var busy = existing.Select(a =>
         {
             var dur = a.Service is { DurationInMinutes: > 0 } ? a.Service.DurationInMinutes : 30;
             return (Start: a.StartDateTime, End: a.StartDateTime.AddMinutes(dur));
         }).ToList();
+
+        busy.AddRange(blocked.Select(b => (Start: b.StartDateTime, End: b.EndDateTime)));
 
         for (var slot = open; slot.AddMinutes(duration) <= close; slot = slot.AddMinutes(duration))
         {
@@ -45,13 +49,21 @@ public static class SlotGenerator
         return slots;
     }
 
-    /// <summary>Build an absolute instant from a wall-clock date+time in the given zone (DST-aware).</summary>
+    /// <summary>
+    /// Build an absolute instant from a wall-clock date+time in the given zone (DST-aware).
+    /// Returned as UTC (offset 0) so it can be written to a PostgreSQL `timestamp with time zone`
+    /// column — Npgsql rejects DateTimeOffsets with a non-zero offset.
+    /// </summary>
     private static DateTimeOffset ToInstant(DateOnly date, TimeOnly time, TimeZoneInfo tz)
     {
         var local = date.ToDateTime(time); // DateTimeKind.Unspecified — a wall-clock reading
         var offset = tz.GetUtcOffset(local);
-        return new DateTimeOffset(local, offset);
+        return new DateTimeOffset(local, offset).ToUniversalTime();
     }
+
+    /// <summary>Public overload: build an instant from a wall-clock date+time in the given IANA zone.</summary>
+    public static DateTimeOffset ToInstant(DateOnly date, TimeOnly time, string timeZoneId) =>
+        ToInstant(date, time, ResolveTimeZone(timeZoneId));
 
     /// <summary>Resolve an IANA id (falls back to UTC if the host can't find it).</summary>
     public static TimeZoneInfo ResolveTimeZone(string? timeZoneId)

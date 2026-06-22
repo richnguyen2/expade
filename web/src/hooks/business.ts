@@ -4,6 +4,7 @@ import { businessService } from '@/services/businessServices';
 import { QUERY_KEYS } from '@/lib/constants';
 import type {
   BusinessHoursInput,
+  CreateBlockedTimeRequest,
   CreateBusinessFromRequest,
   CreateServiceRequest,
   UpdateBusinessRequest,
@@ -116,5 +117,39 @@ export function useAvailability(businessId: string, serviceId: string, date: str
     queryFn: async () =>
       businessService.getAvailability(businessId, serviceId, date, await getToken()),
     enabled: Boolean(businessId && serviceId && date),
+  });
+}
+
+/** Manual blocked times for a business (owner schedule). */
+export function useBlockedTimes(businessId: string) {
+  const { getToken } = useAuth();
+  return useQuery({
+    queryKey: QUERY_KEYS.blockedTimes(businessId),
+    queryFn: async () => businessService.getBlockedTimes(businessId, await getToken()),
+    enabled: Boolean(businessId),
+  });
+}
+
+/** Create a blocked time; invalidates the business's block list. */
+export function useCreateBlockedTime(businessId: string) {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateBlockedTimeRequest) =>
+      businessService.createBlockedTime(businessId, data, await getToken()),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.blockedTimes(businessId) }),
+  });
+}
+
+/** Delete a blocked time; invalidates the business's block list. */
+export function useDeleteBlockedTime(businessId: string) {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (blockId: string) =>
+      businessService.deleteBlockedTime(businessId, blockId, await getToken()),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.blockedTimes(businessId) }),
   });
 }

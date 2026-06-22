@@ -2,7 +2,7 @@ using Expade.Core.Enums;
 
 namespace Expade.Core.Entities;
 
-public class Worker
+public class Worker : IAuditable
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public WorkerRole Role { get; set; }
@@ -14,6 +14,7 @@ public class Worker
 
     public string JobTitle { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
     public User User { get; set; } = null!;

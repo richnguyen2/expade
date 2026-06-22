@@ -17,6 +17,7 @@ public class AppointmentRepository : IAppointmentRepository
                 .ThenInclude(s => s.Business)
             .Include(a => a.Worker)
                 .ThenInclude(w => w.User)
+            .Include(a => a.Client)
             .FirstOrDefaultAsync(a => a.Id == id);
 
     public async Task<IEnumerable<Appointment>> GetByClientIdAsync(Guid clientId) =>
@@ -26,6 +27,18 @@ public class AppointmentRepository : IAppointmentRepository
                 .ThenInclude(s => s.Business)
             .Include(a => a.Worker)
                 .ThenInclude(w => w.User)
+            .Include(a => a.Client)
+            .OrderBy(a => a.StartDateTime)
+            .ToListAsync();
+
+    public async Task<IEnumerable<Appointment>> GetByBusinessIdAsync(Guid businessId) =>
+        await _db.Appointments
+            .Where(a => a.Service.BusinessId == businessId)
+            .Include(a => a.Service)
+                .ThenInclude(s => s.Business)
+            .Include(a => a.Worker)
+                .ThenInclude(w => w.User)
+            .Include(a => a.Client)
             .OrderBy(a => a.StartDateTime)
             .ToListAsync();
 

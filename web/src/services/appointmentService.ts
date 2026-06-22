@@ -6,6 +6,9 @@ export const appointmentService = {
   getMyAppointments: (token: string | null) =>
     apiClient.get<AppointmentResponse[]>('/appointments/my', token),
 
+  getBusinessAppointments: (businessId: string, token: string | null) =>
+    apiClient.get<AppointmentResponse[]>(`/businesses/${businessId}/appointments`, token),
+
   create: (data: CreateAppointmentRequest, token: string | null) =>
     apiClient.post<AppointmentResponse>('/appointments', data, token),
 

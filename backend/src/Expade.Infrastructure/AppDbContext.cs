@@ -13,6 +13,27 @@ public class AppDbContext : DbContext
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<BusinessHours> BusinessHours => Set<BusinessHours>();
+    public DbSet<BlockedTime> BlockedTimes => Set<BlockedTime>();
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        TouchTimestamps();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    public override int SaveChanges()
+    {
+        TouchTimestamps();
+        return base.SaveChanges();
+    }
+
+    /// <summary>Stamp UpdatedAt on any added/modified auditable entity.</summary>
+    private void TouchTimestamps()
+    {
+        foreach (var entry in ChangeTracker.Entries<IAuditable>())
+            if (entry.State is EntityState.Added or EntityState.Modified)
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -82,6 +103,17 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<BusinessHours>()
             .HasIndex(h => new { h.BusinessId, h.DayOfWeek })
             .IsUnique();
+
+        // 1-to-Many: Business -> BlockedTimes (deleting a business deletes its blocks)
+        modelBuilder.Entity<BlockedTime>()
+            .HasOne(bt => bt.Business)
+            .WithMany(b => b.BlockedTimes)
+            .HasForeignKey(bt => bt.BusinessId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Lookups are by business + start time
+        modelBuilder.Entity<BlockedTime>()
+            .HasIndex(bt => new { bt.BusinessId, bt.StartDateTime });
 
         // 1-to-Many: Service -> Appointments
         modelBuilder.Entity<Appointment>()
