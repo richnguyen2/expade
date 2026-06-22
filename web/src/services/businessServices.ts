@@ -5,6 +5,8 @@ import type {
   BusinessSummaryResponse,
   BusinessHoursInput,
   BusinessHoursResponse,
+  BlockedTimeResponse,
+  CreateBlockedTimeRequest,
   CreateBusinessFromRequest,
   CreateServiceRequest,
   ServiceResponse,
@@ -48,4 +50,13 @@ export const businessService = {
       `/businesses/${businessId}/availability?serviceId=${serviceId}&date=${date}`,
       token,
     ),
+
+  getBlockedTimes: (id: string, token: string | null) =>
+    apiClient.get<BlockedTimeResponse[]>(`/businesses/${id}/blocked-times`, token),
+
+  createBlockedTime: (id: string, data: CreateBlockedTimeRequest, token: string | null) =>
+    apiClient.post<BlockedTimeResponse>(`/businesses/${id}/blocked-times`, data, token),
+
+  deleteBlockedTime: (id: string, blockId: string, token: string | null) =>
+    apiClient.delete(`/businesses/${id}/blocked-times/${blockId}`, token),
 };

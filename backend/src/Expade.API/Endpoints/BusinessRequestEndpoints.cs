@@ -1,12 +1,10 @@
-using Expade.Core.Entities;
-using Expade.Core.Interfaces;
-using Expade.API.Contracts.BusinessRequests.Requests;
-using Expade.Core.Enums;
 using System.Security.Claims;
-using Expade.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Expade.API.Contracts.BusinessRequests.Responses;
+using Expade.API.Contracts.BusinessRequests.Requests;
+using Expade.API.Extensions;
+using Expade.API.Filters;
 using Expade.API.Mappings;
+using Expade.Application.BusinessRequests;
+
 namespace Expade.API.Endpoints;
 
 public static class BusinessRequestEndpoints
@@ -15,163 +13,46 @@ public static class BusinessRequestEndpoints
     {
         var group = app.MapGroup("/api/business-requests").WithTags("BusinessRequests");
 
-        group.MapGet("/", async (IBusinessRequestRepository repository) =>
+        group.MapGet("/", async (IBusinessRequestAppService service) =>
         {
-            var requests = await repository.GetAllAsync();
+            var requests = await service.GetAllAsync();
             return Results.Ok(requests.Select(r => r.ToResponse()));
         }).RequireAuthorization("AdminOnly");
 
         group.MapPost("/", async (
-            ClaimsPrincipal userPrincipal, 
-            CreateBusinessRequestRequest request, 
-            IBusinessRequestRepository repository, 
-            IUserRepository userRepository, 
-            IGeocodingService geoService,
-            IEmailService emailService) =>
+            ClaimsPrincipal userPrincipal,
+            CreateBusinessRequestRequest request,
+            IBusinessRequestAppService service) =>
         {
-            var clerkId = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(clerkId)) return Results.Unauthorized();
+            var clerkId = userPrincipal.GetClerkId();
+            if (clerkId is null) return Results.Unauthorized();
 
-            // 2. Find the user in your DB by their ExternalId
-            var user = await userRepository.GetByExternalIdAsync(clerkId);
+            var created = await service.SubmitAsync(
+                clerkId,
+                new SubmitBusinessRequestCommand(request.Name, request.Phone, request.CategoryId, request.Address));
 
-            if (user == null) return Results.NotFound("User profile not found.");
-
-            var coordinates = await geoService.GetCoordinatesAsync(request.Address);
-            if (coordinates == null)
-            {
-                return Results.BadRequest("Could not geocode the provided address.");
-            }
-
-            var newBusinessRequest = new BusinessRequest
-            {
-                Name = request.Name,
-                CategoryId = request.CategoryId,
-                Address = request.Address,
-                Phone = request.Phone,
-                Latitude = coordinates.Lat,
-                Longitude = coordinates.Lon,
-                TimeZoneId = string.IsNullOrWhiteSpace(coordinates.TimeZoneId)
-                    ? "America/New_York"
-                    : coordinates.TimeZoneId,
-                UserId = user.Id,
-            };
-
-            await repository.AddAsync(newBusinessRequest);
-            var email = user.Email;
-
-            if (!string.IsNullOrEmpty(email))
-            {
-                _ = emailService.SendBusinessRequestConfirmationEmailAsync(email, user.Username, request.Name);
-            }
-            return Results.Created($"/business-requests/{newBusinessRequest.Id}", newBusinessRequest.ToResponse());
-        }).RequireAuthorization();
+            return Results.Created($"/business-requests/{created.Id}", created.ToResponse());
+        }).RequireAuthorization().WithValidation<CreateBusinessRequestRequest>();
 
         group.MapPatch("/{id:guid}/status", async (
-            Guid id, 
-            UpdateBusinessRequestStatusRequest request, 
-            IBusinessRequestRepository repository, 
-            IUserRepository userRepository, 
-            IConfiguration config,
-            IEmailService emailService, 
-            HttpClient httpClient) =>
+            Guid id,
+            UpdateBusinessRequestStatusRequest request,
+            IBusinessRequestAppService service) =>
         {
-            var existingRequest = await repository.GetByIdAsync(id);
-            if (existingRequest == null) return Results.NotFound();
-
-            existingRequest.Status = request.Status;
-            var user = await userRepository.GetByIdAsync(existingRequest.UserId);
-            if (user == null) return Results.NotFound("User not found for this request.");
-
-            await repository.UpdateAsync(existingRequest);
-
-            var email = user.Email;
-
-            if (request.Status == RequestStatus.Approved)
-            {
-                 _ = emailService.SendBusinessRequestApprovedEmailAsync(email, user.Username, existingRequest.Name, existingRequest.Id);
-
-                // Promote the requester to BusinessOwner — but never touch an Admin,
-                // and skip anyone who is already a BusinessOwner (idempotent).
-                if (user.Role != UserRole.Admin && user.Role != UserRole.BusinessOwner)
-                {
-                    user.Role = UserRole.BusinessOwner;
-                    await userRepository.UpdateAsync(user);
-
-                    var clerkSecretKey = config["Clerk:SecretKey"];
-                    // Clerk's API expects the Clerk user ID, which we store as ExternalId — NOT the internal Guid.
-                    var clerkUserId = user.ExternalId;
-
-                    if (string.IsNullOrEmpty(clerkUserId))
-                    {
-                        return Results.Problem("Status updated, but user has no Clerk ExternalId to promote.");
-                    }
-
-                    var clerkPayload = new
-                    {
-                        public_metadata = new { role = nameof(UserRole.BusinessOwner) }
-                    };
-
-                    var requestMessage = new HttpRequestMessage(
-                        HttpMethod.Patch,
-                        $"https://api.clerk.com/v1/users/{clerkUserId}/metadata"
-                    );
-
-                    requestMessage.Headers.Add("Authorization", $"Bearer {clerkSecretKey}");
-                    requestMessage.Content = JsonContent.Create(clerkPayload);
-
-                    var response = await httpClient.SendAsync(requestMessage);
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        // Optional: Log this error. The status updated, but Clerk failed.
-                        return Results.Problem("Status updated, but failed to promote user in Clerk.");
-                    }
-                }
-            } else if (request.Status == RequestStatus.Rejected)
-            {
-                _ = emailService.SendBusinessRequestRejectionEmailAsync(email, user.Username, existingRequest.Name);
-            }
-
+            await service.UpdateStatusAsync(id, request.Status);
             return Results.NoContent();
         }).RequireAuthorization("AdminOnly");
 
         group.MapGet("/{id:guid}/onboarding-data", async (
-            Guid id, 
-            ClaimsPrincipal userPrincipal, 
-            IUserRepository userRepository,
-            IBusinessRepository businessRepository,
-            AppDbContext db) =>
+            Guid id,
+            ClaimsPrincipal userPrincipal,
+            IBusinessRequestAppService service) =>
         {
-            // Get the Clerk User ID from the token
-            var clerkId = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(clerkId)) return Results.Unauthorized();
+            var clerkId = userPrincipal.GetClerkId();
+            if (clerkId is null) return Results.Unauthorized();
 
-            // Find the user in your DB by their ExternalId
-            var user = await userRepository.GetByExternalIdAsync(clerkId);
-            if (user == null) return Results.NotFound("User profile not found.");
-
-            // Fetch the business request and include the category for pre-filling
-            var request = await db.BusinessRequests
-                .Include(r => r.Category)
-                .FirstOrDefaultAsync(r => r.Id == id);
-
-            if (request == null) return Results.NotFound("Business request not found.");
-            var alreadyExists = await businessRepository.ExistsByRequestIdAsync(request.Id);
-
-            if (alreadyExists) return Results.NotFound("Business already created.");
-
-            // Guard: Ensure the logged-in user actually owns this request
-            if (request.UserId != user.Id) return Results.Forbid();
-
-            // Guard: Ensure it's actually approved before letting them onboard
-            if (request.Status != RequestStatus.Approved)
-            {
-                return Results.BadRequest("This business request has not been approved yet.");
-            }
-
+            var request = await service.GetOnboardingDataAsync(id, clerkId);
             return Results.Ok(request.ToOnboardResponse());
         }).RequireAuthorization();
-
     }
 }

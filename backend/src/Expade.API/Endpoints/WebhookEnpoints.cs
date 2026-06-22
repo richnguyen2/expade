@@ -53,6 +53,7 @@ public static class WebhookEndpoints
                 {
                     var data = root.GetProperty("data");
                     var id = data.GetProperty("id").GetString();
+                    if (string.IsNullOrEmpty(id)) return Results.BadRequest("Webhook payload missing user id.");
 
                     string email = "test@example.com"; // Default for test payloads
                     if (data.TryGetProperty("email_addresses", out var emails) && emails.GetArrayLength() > 0)

@@ -94,4 +94,59 @@ public class EmailService : IEmailService
         request.Content = JsonContent.Create(payload);
         await _httpClient.SendAsync(request);
     }
+
+    public async Task SendNewAppointmentEmailAsync(string toEmail, string staffName, string clientName, string serviceName, string whenFormatted)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+
+        var appointmentsLink = $"{_frontendBaseUrl}/my-businesses";
+
+        var payload = new
+        {
+            from = _fromAddress,
+            to = new[] { toEmail },
+            subject = $"New booking request: {serviceName}",
+            html = $@"
+                <div style='font-family: sans-serif; color: #333;'>
+                    <p>Hi <strong>{staffName}</strong>,</p>
+                    <p><strong>{clientName}</strong> has requested an appointment for <strong>{serviceName}</strong>.</p>
+                    <p><strong>When:</strong> {whenFormatted}</p>
+                    <p>Open your dashboard to accept or decline this request.</p>
+                    <a href='{appointmentsLink}' style='display: inline-block; padding: 12px 24px; background-color: #708238; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 16px;'>
+                        View in dashboard
+                    </a>
+                </div>"
+        };
+
+        request.Content = JsonContent.Create(payload);
+        await _httpClient.SendAsync(request);
+    }
+
+    public async Task SendAppointmentConfirmedEmailAsync(string toEmail, string clientName, string businessName, string serviceName, string whenFormatted)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+
+        var appointmentsLink = $"{_frontendBaseUrl}/appointments";
+
+        var payload = new
+        {
+            from = _fromAddress,
+            to = new[] { toEmail },
+            subject = $"Your appointment is confirmed — {serviceName}",
+            html = $@"
+                <div style='font-family: sans-serif; color: #333;'>
+                    <p>Hi <strong>{clientName}</strong>,</p>
+                    <p>Good news! <strong>{businessName}</strong> has confirmed your appointment for <strong>{serviceName}</strong>.</p>
+                    <p><strong>When:</strong> {whenFormatted}</p>
+                    <a href='{appointmentsLink}' style='display: inline-block; padding: 12px 24px; background-color: #708238; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 16px;'>
+                        View my appointments
+                    </a>
+                </div>"
+        };
+
+        request.Content = JsonContent.Create(payload);
+        await _httpClient.SendAsync(request);
+    }
 }

@@ -26,7 +26,7 @@ export function useCreateAppointment() {
   });
 }
 
-/** Cancel (client) or confirm/complete (staff) an appointment. */
+/** Cancel (client) or confirm/complete (staff) an appointment. Invalidates the client's list. */
 export function useUpdateAppointmentStatus() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
@@ -35,5 +35,30 @@ export function useUpdateAppointmentStatus() {
       appointmentService.updateStatus(id, status, await getToken()),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myAppointments }),
+  });
+}
+
+/** All appointments for a business — the owner's schedule view. */
+export function useBusinessAppointments(businessId: string) {
+  const { getToken } = useAuth();
+  return useQuery({
+    queryKey: QUERY_KEYS.businessAppointments(businessId),
+    queryFn: async () => appointmentService.getBusinessAppointments(businessId, await getToken()),
+    enabled: Boolean(businessId),
+  });
+}
+
+/**
+ * Staff-side status change (accept / decline / complete) from the dashboard.
+ * Invalidates this business's schedule rather than the client's personal list.
+ */
+export function useUpdateBusinessAppointmentStatus(businessId: string) {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: AppointmentStatus }) =>
+      appointmentService.updateStatus(id, status, await getToken()),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.businessAppointments(businessId) }),
   });
 }

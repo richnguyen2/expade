@@ -54,6 +54,31 @@ namespace Expade.Infrastructure.Migrations
                     b.ToTable("Appointments");
                 });
 
+            modelBuilder.Entity("Expade.Core.Entities.BlockedTime", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("EndDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("StartDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusinessId", "StartDateTime");
+
+                    b.ToTable("BlockedTimes");
+                });
+
             modelBuilder.Entity("Expade.Core.Entities.Business", b =>
                 {
                     b.Property<Guid>("Id")
@@ -94,6 +119,9 @@ namespace Expade.Infrastructure.Migrations
                     b.Property<string>("TimeZoneId")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -250,6 +278,9 @@ namespace Expade.Infrastructure.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BusinessId");
@@ -320,6 +351,9 @@ namespace Expade.Infrastructure.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
@@ -358,6 +392,17 @@ namespace Expade.Infrastructure.Migrations
                     b.Navigation("Service");
 
                     b.Navigation("Worker");
+                });
+
+            modelBuilder.Entity("Expade.Core.Entities.BlockedTime", b =>
+                {
+                    b.HasOne("Expade.Core.Entities.Business", "Business")
+                        .WithMany("BlockedTimes")
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("Expade.Core.Entities.Business", b =>
@@ -441,6 +486,8 @@ namespace Expade.Infrastructure.Migrations
 
             modelBuilder.Entity("Expade.Core.Entities.Business", b =>
                 {
+                    b.Navigation("BlockedTimes");
+
                     b.Navigation("Hours");
 
                     b.Navigation("Services");

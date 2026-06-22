@@ -8,6 +8,7 @@ public record AppointmentResponse(
     decimal Price,
     int DurationInMinutes,
     string WorkerName,
+    string ClientName,
     DateTimeOffset StartDateTime,
     string TimeZoneId,
     string Status

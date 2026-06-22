@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Expade.API/Expade.API.csproj" />
+    <Project Path="src/Expade.Application/Expade.Application.csproj" />
     <Project Path="src/Expade.Core/Expade.Core.csproj" />
     <Project Path="src/Expade.Infrastructure/Expade.Infrastructure.csproj" />
   </Folder>

@@ -13,4 +13,6 @@ export const QUERY_KEYS = {
   availability: (businessId: string, serviceId: string, date: string) =>
     ['availability', businessId, serviceId, date] as const,
   myAppointments: ['my-appointments'] as const,
+  businessAppointments: (id: string) => ['business-appointments', id] as const,
+  blockedTimes: (id: string) => ['blocked-times', id] as const,
 };

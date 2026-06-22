@@ -59,7 +59,7 @@ export default function DashboardTabs({ business }: DashboardTabsProps) {
         <OverviewTab business={business} />
       </TabsContent>
       <TabsContent value="schedule" className="mt-6">
-        <ScheduleTab />
+        <ScheduleTab business={business} />
       </TabsContent>
       <TabsContent value="services" className="mt-6">
         <ServicesTab business={business} />

@@ -1,6 +1,13 @@
-using System.Security.Claims;
 using Expade.API.Endpoints;
+using Expade.API.Handlers;
+using Expade.Application.Appointments;
+using Expade.Application.BlockedTimes;
+using Expade.Application.BusinessRequests;
+using Expade.Application.Businesses;
+using Expade.API.Validators;
+using Expade.Application.Common;
 using Expade.Core.Enums;
+using FluentValidation;
 using Expade.Core.Interfaces;
 using Expade.Infrastructure;
 using Expade.Infrastructure.Repositories;
@@ -25,6 +32,14 @@ builder.Services.AddScoped<IBusinessRequestRepository, BusinessRequestRepository
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+builder.Services.AddScoped<IBlockedTimeRepository, BlockedTimeRepository>();
+
+// Application services (use-case orchestrators)
+builder.Services.AddScoped<IBusinessAccess, BusinessAccess>();
+builder.Services.AddScoped<IBusinessRequestAppService, BusinessRequestAppService>();
+builder.Services.AddScoped<IBusinessAppService, BusinessAppService>();
+builder.Services.AddScoped<IAppointmentAppService, AppointmentAppService>();
+builder.Services.AddScoped<IBlockedTimeAppService, BlockedTimeAppService>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 builder.Services.AddCors(options =>
@@ -73,11 +88,16 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddHttpClient<IEmailService, EmailService>();
 builder.Services.AddHttpClient<IGeocodingService, OpenCageGeocodingService>();
-
-// Set your API key in user-secrets or environment variable and retrieve it here
-var apiKey = builder.Configuration["OpenCageApiKey"];
+builder.Services.AddHttpClient<IClerkService, ClerkService>();
 
 builder.Services.AddOpenApi();
+
+// FluentValidation validators (applied per-endpoint via ValidationFilter<T>).
+builder.Services.AddValidatorsFromAssemblyContaining<CreateServiceValidator>();
+
+// Map exceptions to RFC 7807 ProblemDetails via GlobalExceptionHandler.
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -85,6 +105,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
@@ -102,6 +124,7 @@ app.MapBusinessEndpoints();
 app.MapBusinessRequestEndpoints();
 app.MapCategoryEndpoints();
 app.MapAppointmentEndpoints();
+app.MapBlockedTimeEndpoints();
 app.MapWebhookEndpoints();
 
 app.Run();

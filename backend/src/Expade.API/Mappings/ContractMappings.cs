@@ -54,6 +54,9 @@ public static class ContractMappings
     public static BusinessHoursResponse ToResponse(this BusinessHours h) =>
         new((int)h.DayOfWeek, h.IsOpen, h.OpenTime.ToString("HH:mm"), h.CloseTime.ToString("HH:mm"));
 
+    public static BlockedTimeResponse ToResponse(this BlockedTime bt) =>
+        new(bt.Id, bt.StartDateTime, bt.EndDateTime, bt.Reason);
+
     public static AppointmentResponse ToResponse(this Appointment a) =>
         new(
             a.Id,
@@ -63,6 +66,7 @@ public static class ContractMappings
             a.Service.Price,
             a.Service.DurationInMinutes,
             a.Worker?.User?.Username ?? a.Worker?.JobTitle ?? "Staff",
+            a.Client?.Username ?? "Customer",
             a.StartDateTime,
             a.Service.Business?.TimeZoneId ?? "America/New_York",
             a.Status.ToString()
