@@ -189,3 +189,15 @@ export interface CreateBlockedTimeRequest {
   end: string;
   reason?: string;
 }
+
+/* ------------------------------------------------------------------ */
+/* Address autocomplete                                                */
+/* ------------------------------------------------------------------ */
+
+/** GET /api/addresses/search — a validated, geocodable address suggestion. */
+export interface AddressSuggestionResponse {
+  formattedAddress: string;
+  lat: number;
+  lon: number;
+  timeZoneId: string | null;
+}

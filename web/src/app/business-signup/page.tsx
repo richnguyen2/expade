@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useCategories, useSubmitBusinessRequest } from '@/hooks';
+import { businessSignupSchema, type BusinessSignupValues } from '@/lib/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import AddressAutocomplete from '@/components/forms/AddressAutocomplete';
 import {
   Users,
   CalendarDays,
@@ -25,21 +28,22 @@ const benefits: { icon: LucideIcon; title: string; description: string }[] = [
 
 export default function BusinessSignup() {
   const router = useRouter();
-  const [formData, setFormData] = useState({ name: '', phone: '', categoryId: '', address: '' });
-
   const { data: categories, isPending: categoriesLoading, error: categoriesError } = useCategories();
   const mutation = useSubmitBusinessRequest();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    mutation.mutate(formData, {
-      onSuccess: () => router.push('/home'),
-      onError: (err) => alert('Error: ' + err.message),
-    });
-  };
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<BusinessSignupValues>({
+    resolver: zodResolver(businessSignupSchema),
+    defaultValues: { name: '', phone: '', categoryId: '', address: '' },
+  });
 
-  const update = (field: keyof typeof formData) => (value: string) =>
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const onSubmit = (values: BusinessSignupValues) => {
+    mutation.mutate(values, { onSuccess: () => router.push('/home') });
+  };
 
   return (
     <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-border bg-card shadow-xl lg:grid-cols-2">
@@ -90,17 +94,17 @@ export default function BusinessSignup() {
           <p className="mt-1 text-sm text-muted-foreground">All fields are required.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
           <div className="space-y-1.5">
             <Label htmlFor="name">Business name</Label>
             <Input
               id="name"
-              required
               placeholder="e.g. Main Street Auto Shop"
-              value={formData.name}
-              onChange={(e) => update('name')(e.target.value)}
+              aria-invalid={!!errors.name}
+              {...register('name')}
               className="h-11"
             />
+            {errors.name && <p className="text-xs font-medium text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="space-y-1.5">
@@ -108,12 +112,12 @@ export default function BusinessSignup() {
             <Input
               id="phone"
               type="tel"
-              required
               placeholder="(555) 123-4567"
-              value={formData.phone}
-              onChange={(e) => update('phone')(e.target.value)}
+              aria-invalid={!!errors.phone}
+              {...register('phone')}
               className="h-11"
             />
+            {errors.phone && <p className="text-xs font-medium text-destructive">{errors.phone.message}</p>}
           </div>
 
           <div className="space-y-1.5">
@@ -121,13 +125,10 @@ export default function BusinessSignup() {
             <div className="relative">
               <select
                 id="category"
-                required
-                value={formData.categoryId}
                 disabled={categoriesLoading || Boolean(categoriesError)}
-                onChange={(e) => update('categoryId')(e.target.value)}
-                className={`h-11 w-full appearance-none rounded-lg border border-input bg-transparent pl-3 pr-10 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 ${
-                  formData.categoryId === '' ? 'text-muted-foreground' : 'text-foreground'
-                }`}
+                aria-invalid={!!errors.categoryId}
+                {...register('categoryId')}
+                className="h-11 w-full appearance-none rounded-lg border border-input bg-transparent pl-3 pr-10 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="" disabled>
                   {categoriesLoading
@@ -144,20 +145,37 @@ export default function BusinessSignup() {
               </select>
               <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
             </div>
+            {errors.categoryId && <p className="text-xs font-medium text-destructive">{errors.categoryId.message}</p>}
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="address">Business address</Label>
-            <Input
-              id="address"
-              required
-              placeholder="123 Market St, City, State, ZIP"
-              value={formData.address}
-              onChange={(e) => update('address')(e.target.value)}
-              className="h-11"
+            <Controller
+              control={control}
+              name="address"
+              render={({ field }) => (
+                <AddressAutocomplete
+                  id="address"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  invalid={!!errors.address}
+                  placeholder="Start typing, then press Find"
+                />
+              )}
             />
-            <p className="text-xs text-muted-foreground">We use this to place you on the map for nearby customers.</p>
+            <p className="text-xs text-muted-foreground">
+              Type your address and press <span className="font-medium">Find</span>, then pick the match — we use it to
+              place you on the map.
+            </p>
+            {errors.address && <p className="text-xs font-medium text-destructive">{errors.address.message}</p>}
           </div>
+
+          {mutation.isError && (
+            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+              {mutation.error.message}
+            </p>
+          )}
 
           <Button
             type="submit"

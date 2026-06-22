@@ -3,6 +3,7 @@
 import { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOnboardingData, useCreateBusinessFromRequest } from '@/hooks';
+import { emailSchema } from '@/lib/validation';
 import type { ServiceInput } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -35,6 +36,8 @@ export default function OnboardPage({ params }: OnboardPageProps) {
     { dayOfWeek: 6, isOpen: false, open: '10:00', close: '15:00' },
   ]);
 
+  const [formError, setFormError] = useState<string | null>(null);
+
   const { data: requestData, isLoading, error } = useOnboardingData(id);
   const mutation = useCreateBusinessFromRequest();
 
@@ -65,11 +68,34 @@ export default function OnboardPage({ params }: OnboardPageProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
+    // Drop blank starter rows; keep only services the owner actually filled in.
+    const cleanedServices = services
+      .map((s) => ({ ...s, name: s.name.trim() }))
+      .filter((s) => s.name.length > 0);
+
+    // Validate any team-member emails before submitting.
+    const cleanedWorkers = workers
+      .map((w) => w.email.trim())
+      .filter((email) => email.length > 0);
+    const invalidEmail = cleanedWorkers.find((email) => !emailSchema.safeParse(email).success);
+    if (invalidEmail) {
+      setFormError(`"${invalidEmail}" is not a valid email address.`);
+      return;
+    }
+
     mutation.mutate(
-      { requestId: id, description, services, workers, hours },
+      {
+        requestId: id,
+        description,
+        services: cleanedServices,
+        workers: cleanedWorkers.map((email) => ({ email })),
+        hours,
+      },
       {
         onSuccess: () => router.push('/home'),
-        onError: (err) => alert(err.message),
+        onError: (err) => setFormError(err.message),
       },
     );
   };
@@ -172,6 +198,12 @@ export default function OnboardPage({ params }: OnboardPageProps) {
           />
 
           <OnboardHours hours={hours} onChange={setHours} />
+
+          {formError && (
+            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+              {formError}
+            </p>
+          )}
 
           <Button
             type="submit"

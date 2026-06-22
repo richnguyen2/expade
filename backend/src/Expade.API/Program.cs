@@ -16,7 +16,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -99,6 +101,22 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateServiceValidator>();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+// Rate-limit the address-search proxy per authenticated user (fallback IP) so it can't be abused.
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy(AddressEndpoints.SearchRateLimitPolicy, httpContext =>
+    {
+        var key = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                  ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                  ?? "anonymous";
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+        });
+    });
+});
+
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -119,12 +137,14 @@ app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapBusinessEndpoints();
 app.MapBusinessRequestEndpoints();
 app.MapCategoryEndpoints();
 app.MapAppointmentEndpoints();
 app.MapBlockedTimeEndpoints();
+app.MapAddressEndpoints();
 app.MapWebhookEndpoints();
 
 app.Run();

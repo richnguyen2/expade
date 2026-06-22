@@ -1,7 +1,9 @@
+using Expade.API.Contracts.Addresses;
 using Expade.API.Contracts.Appointments.Responses;
 using Expade.API.Contracts.Businesses.Responses;
 using Expade.API.Contracts.BusinessRequests.Responses;
 using Expade.Core.Entities;
+using Expade.Core.Interfaces;
 
 namespace Expade.API.Mappings;
 
@@ -56,6 +58,9 @@ public static class ContractMappings
 
     public static BlockedTimeResponse ToResponse(this BlockedTime bt) =>
         new(bt.Id, bt.StartDateTime, bt.EndDateTime, bt.Reason);
+
+    public static AddressSuggestionResponse ToResponse(this AddressSuggestion s) =>
+        new(s.FormattedAddress, s.Lat, s.Lon, s.TimeZoneId);
 
     public static AppointmentResponse ToResponse(this Appointment a) =>
         new(
