@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Lock, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useUpdateBusiness } from '@/hooks';
+import { businessSettingsSchema, type BusinessSettingsValues } from '@/lib/validation';
 import type { BusinessResponse } from '@/types';
 
 interface SettingsTabProps {
@@ -17,21 +20,22 @@ export default function SettingsTab({ business }: SettingsTabProps) {
   const [successMessage, setSuccessMessage] = useState('');
   const updateMutation = useUpdateBusiness(business.id);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    updateMutation.mutate(
-      {
-        phone: formData.get('phone') as string,
-        description: formData.get('description') as string,
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<BusinessSettingsValues>({
+    resolver: zodResolver(businessSettingsSchema),
+    defaultValues: { phone: business.phone, description: business.description },
+  });
+
+  const onSubmit = (values: BusinessSettingsValues) => {
+    updateMutation.mutate(values, {
+      onSuccess: () => {
+        setSuccessMessage('Settings saved successfully!');
+        setTimeout(() => setSuccessMessage(''), 3000);
       },
-      {
-        onSuccess: () => {
-          setSuccessMessage('Settings saved successfully!');
-          setTimeout(() => setSuccessMessage(''), 3000);
-        },
-      },
-    );
+    });
   };
 
   const lockedFields = [
@@ -66,20 +70,24 @@ export default function SettingsTab({ business }: SettingsTabProps) {
       </div>
 
       {/* Editable fields */}
-      <form onSubmit={handleSubmit} className="mt-8 space-y-5 border-t border-border pt-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5 border-t border-border pt-8" noValidate>
         <div>
           <Label htmlFor="phone">Phone number</Label>
-          <Input id="phone" name="phone" type="tel" defaultValue={business.phone} className="mt-1.5" />
+          <Input id="phone" type="tel" aria-invalid={!!errors.phone} {...register('phone')} className="mt-1.5" />
+          {errors.phone && <p className="mt-1 text-xs font-medium text-destructive">{errors.phone.message}</p>}
         </div>
         <div>
           <Label htmlFor="description">Description</Label>
           <Textarea
             id="description"
-            name="description"
             rows={4}
-            defaultValue={business.description}
+            aria-invalid={!!errors.description}
+            {...register('description')}
             className="mt-1.5"
           />
+          {errors.description && (
+            <p className="mt-1 text-xs font-medium text-destructive">{errors.description.message}</p>
+          )}
         </div>
 
         {updateMutation.isError && (
