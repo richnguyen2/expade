@@ -12,7 +12,8 @@ ASP.NET Core (.NET 10) minimal-API marketplace backend, Clean Architecture. Upda
 
 ## Commands (run from `backend/`)
 - `dotnet build` — build + verify; **use after every change.**
-- `dotnet run --project src/Expade.API` — http://localhost:5055 (https 7089). **Restart it to pick up code/contract changes.**
+- `dotnet test` — runs `tests/Expade.Tests` (xUnit + NSubstitute): SlotGenerator, FluentValidation validators, and app-service auth/guard paths. Pure unit tests (no DB/HTTP) — keep them fast and add to them.
+- `dotnet run --project src/Expade.API` — http://localhost:5055 (https 7089). **Restart it to pick up code/contract changes.** Startup applies pending EF migrations automatically (`Database.Migrate()`), so the DB must be reachable on boot.
 - Migration: `dotnet ef migrations add <Name> --project src/Expade.Infrastructure --startup-project src/Expade.API`
 - Secrets (user-secrets / env on `Expade.API`): `Clerk:SecretKey`, `Clerk:WebhookSecret`, `OpenCageApiKey`, `Resend:ApiKey`. Connection string, `Clerk:Authority`, `Frontend:BaseUrl`, `Resend:FromAddress`, CORS origins live in `appsettings.Development.json`.
 

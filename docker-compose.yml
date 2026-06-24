@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ExpadeDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yourpassword}
+    ports:
+      - "5433:5432"
+    volumes:
+      - expade-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ExpadeDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=ExpadeDb;Username=postgres;Password=${POSTGRES_PASSWORD:-yourpassword}"
+      Clerk__Authority: ${CLERK_AUTHORITY}
+      Clerk__SecretKey: ${CLERK_SECRET_KEY}
+      Clerk__WebhookSecret: ${CLERK_WEBHOOK_SECRET}
+      OpenCageApiKey: ${OPENCAGE_API_KEY}
+      Resend__ApiKey: ${RESEND_API_KEY}
+      Resend__FromAddress: ${RESEND_FROM_ADDRESS:-Expade <onboarding@resend.dev>}
+      Frontend__BaseUrl: http://localhost:3000
+      Cors__AllowedOrigins__0: http://localhost:3000
+    ports:
+      - "5055:8080"
+
+  web:
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5055/api
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+    depends_on:
+      - backend
+    environment:
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+    ports:
+      - "3000:3000"
+
+volumes:
+  expade-db:

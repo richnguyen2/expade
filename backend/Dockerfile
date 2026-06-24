@@ -1,28 +1,23 @@
-# Stage 1: Build
+# ---- build ----
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Restore first (layer-cached) using just the project files in the API's reference graph.
+COPY src/Expade.Core/Expade.Core.csproj src/Expade.Core/
+COPY src/Expade.Application/Expade.Application.csproj src/Expade.Application/
+COPY src/Expade.Infrastructure/Expade.Infrastructure.csproj src/Expade.Infrastructure/
+COPY src/Expade.API/Expade.API.csproj src/Expade.API/
+RUN dotnet restore src/Expade.API/Expade.API.csproj
+
+# Build + publish.
+COPY src/ src/
+RUN dotnet publish src/Expade.API/Expade.API.csproj -c Release -o /app/publish --no-restore
+
+# ---- runtime ----
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
+COPY --from=build /app/publish .
 
-# Copy the solution and all project files for restoration
-# We copy them specifically so Docker can cache the "restore" layer
-COPY *.slnx .
-COPY src/Expade.API/*.csproj ./src/Expade.API/
-COPY src/Expade.Core/*.csproj ./src/Expade.Core/
-COPY src/Expade.Infrastructure/*.csproj ./src/Expade.Infrastructure/
-
-# Restore dependencies for the entire solution
-RUN dotnet restore
-
-# Copy the remaining source code and build the release version
-COPY . .
-RUN dotnet build -c Release -o /app/build
-
-# Stage 2: Final Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
-WORKDIR /app
-COPY --from=build /app/build .
-
-# Expose the API port
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
-
-# Run the API
 ENTRYPOINT ["dotnet", "Expade.API.dll"]
