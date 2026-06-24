@@ -1,4 +1,6 @@
 using System.Net.Http.Json;
+using System.Text.Json;
+using Expade.Core.Enums;
 using Expade.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 
@@ -30,5 +32,37 @@ public class ClerkService : IClerkService
 
         var response = await _httpClient.SendAsync(requestMessage);
         response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<ClerkUserInfo?> GetUserAsync(string clerkUserId)
+    {
+        if (string.IsNullOrEmpty(clerkUserId)) return null;
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.clerk.com/v1/users/{clerkUserId}");
+        request.Headers.Add("Authorization", $"Bearer {_secretKey}");
+
+        var response = await _httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode) return null;
+
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = doc.RootElement;
+
+        var email = "";
+        if (root.TryGetProperty("email_addresses", out var emails) && emails.GetArrayLength() > 0)
+            email = emails[0].GetProperty("email_address").GetString() ?? "";
+
+        var username = root.TryGetProperty("username", out var u) && u.ValueKind == JsonValueKind.String
+            ? u.GetString()!
+            : (string.IsNullOrEmpty(email)
+                ? $"user_{clerkUserId[^Math.Min(4, clerkUserId.Length)..]}"
+                : email.Split('@')[0]);
+
+        var role = UserRole.User;
+        if (root.TryGetProperty("public_metadata", out var meta) && meta.ValueKind == JsonValueKind.Object
+            && meta.TryGetProperty("role", out var roleProp) && roleProp.ValueKind == JsonValueKind.String
+            && Enum.TryParse<UserRole>(roleProp.GetString(), out var parsed))
+            role = parsed;
+
+        return new ClerkUserInfo(email, username, role);
     }
 }

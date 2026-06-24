@@ -1,5 +1,6 @@
 using Expade.API.Endpoints;
 using Expade.API.Handlers;
+using Expade.API.Middleware;
 using Expade.Application.Appointments;
 using Expade.Application.BlockedTimes;
 using Expade.Application.BusinessRequests;
@@ -138,6 +139,9 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
+
+// Just-in-time mirror the authenticated Clerk user into our DB if it's missing.
+app.UseMiddleware<EnsureUserMiddleware>();
 
 app.MapBusinessEndpoints();
 app.MapBusinessRequestEndpoints();

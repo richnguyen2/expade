@@ -136,17 +136,18 @@ public class AppDbContext : DbContext
             .HasForeignKey(a => a.WorkerId)
             .OnDelete(DeleteBehavior.Restrict); // Prevent Worker deletion if they are scheduled
 
-        var beautyId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var homeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        var autoId = Guid.Parse("33333333-3333-3333-3333-333333333333");
-        var foodId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+        var beautyId = Guid.Parse("a2a8e21c-2323-4e88-8bac-013baca03e27");
+        var homeId = Guid.Parse("016ee037-3bc6-4bd4-bef4-8b367272f0e7");
+        var autoId = Guid.Parse("1bb5ca4a-42d6-4b25-9636-8849fd994532");
+        var foodId = Guid.Parse("96024af6-27be-4f63-ad04-0f63f28d7175");
+        var otherId = Guid.Parse("b20d749f-56b1-41af-910b-85d42f773b82");
 
         modelBuilder.Entity<Category>().HasData(
             new Category { Id = beautyId, Name = "Beauty & Personal Care" },
             new Category { Id = homeId, Name = "Home Services" },
             new Category { Id = autoId, Name = "Automotive Services" },
-            new Category { Id = foodId, Name = "Food & Dining" }
-
+            new Category { Id = foodId, Name = "Food & Dining" },
+            new Category { Id = otherId, Name = "Other" }
         );
     }
 }
