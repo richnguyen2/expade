@@ -147,4 +147,10 @@ app.MapBlockedTimeEndpoints();
 app.MapAddressEndpoints();
 app.MapWebhookEndpoints();
 
+// Apply pending EF migrations on startup so a fresh/containerized database is provisioned.
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+}
+
 app.Run();
