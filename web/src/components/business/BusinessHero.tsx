@@ -39,12 +39,12 @@ export default function BusinessHero({ business, hours }: BusinessHeroProps) {
           <div className="min-w-0">
             <Badge className="bg-white/15 text-primary-foreground">{business.categoryName}</Badge>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">{business.name}</h1>
-            <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-primary-foreground/90">
+            {/* <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-primary-foreground/90">
               <Star className="size-4 fill-amber-300 text-amber-300" />
               4.8
               <span className="text-primary-foreground/60">·</span>
               <span className="font-medium text-primary-foreground/80">2.5 mi</span>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

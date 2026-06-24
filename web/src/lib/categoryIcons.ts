@@ -8,6 +8,7 @@ import {
   PawPrint,
   HeartPulse,
   Palette,
+  Shapes,
   Layers,
   type LucideIcon,
 } from 'lucide-react';
@@ -23,6 +24,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   'Pet Services': PawPrint,
   'Health & Fitness': HeartPulse,
   Creative: Palette,
+  Other: Shapes,
 };
 
 export function iconForCategory(name: string): LucideIcon {
