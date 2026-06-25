@@ -1,0 +1,21 @@
+# Fly.io config for the Expade backend. `app` is set/confirmed by `fly launch`.
+# Build uses ./Dockerfile (multi-stage publish). TLS is terminated at Fly's edge
+# and HTTP forwarded to the container on internal_port; Program.cs reads the
+# forwarded headers so the app sees the real https scheme.
+
+app = "expade-api"
+primary_region = "iad"   # change to your nearest Fly region
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true     # scale to zero when idle (cold start ~1-2s)
+  auto_start_machines = true
+  min_machines_running = 0      # set to 1 for always-on (~$2-3/mo)
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
