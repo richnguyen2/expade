@@ -45,7 +45,7 @@ export default function BusinessHero({ business, hours, distanceMiles }: Busines
               <div className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-primary-foreground/90">
                 <MapPin className="size-4" />
                 <span className="font-medium text-primary-foreground/80">
-                  {distanceMiles.toFixed(1)} mi away
+                  {distanceMiles.toFixed(1)} mi
                 </span>
               </div>
             )}

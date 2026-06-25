@@ -1,10 +1,12 @@
 'use client';
 
+import { Suspense } from 'react';
 import { UserButton, useUser, SignInButton, SignUpButton } from '@clerk/nextjs';
 import Link from 'next/link';
-import { Search, Bell } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import Logo from '@/components/layout/Logo';
 import LocationPicker from '@/components/layout/LocationPicker';
+import SearchBar from '@/components/layout/SearchBar';
 import { Button } from '@/components/ui/button';
 
 export default function Navbar() {
@@ -21,14 +23,9 @@ export default function Navbar() {
       <div className="flex flex-1 items-center justify-center gap-3">
         <LocationPicker />
 
-        <div className="relative w-full max-w-xl">
-          <Search className="absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search services, businesses…"
-            className="w-full rounded-xl border border-border bg-muted/60 py-2.5 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground transition-all focus:border-primary focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
+        <Suspense fallback={<div className="h-10 w-full max-w-xl rounded-xl border border-border bg-muted/60" />}>
+          <SearchBar />
+        </Suspense>
       </div>
 
       {/* Actions / Auth */}
