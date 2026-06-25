@@ -56,6 +56,7 @@ function EmptyState({ filtered }: { filtered: boolean }) {
 export default function DiscoverFeed() {
   const searchParams = useSearchParams();
   const activeCategory = searchParams.get('category');
+  const search = (searchParams.get('search') ?? '').trim();
 
   const { location, radiusMiles } = useUserLocation();
   const businessesQuery = useBusinesses(
@@ -88,6 +89,47 @@ export default function DiscoverFeed() {
 
   const businesses = businessesQuery.data;
   const categories = categoriesQuery.data ?? [];
+
+  // Search view: matches business name OR any service name (substring, case-insensitive),
+  // across all in-range businesses (ignores the selected category).
+  if (search) {
+    const q = search.toLowerCase();
+    const results = businesses.filter(
+      (b) =>
+        b.name.toLowerCase().includes(q) ||
+        b.serviceNames.some((name) => name.toLowerCase().includes(q)),
+    );
+
+    return (
+      <section className="space-y-5">
+        <div>
+          <h2 className="text-2xl font-extrabold tracking-tight text-foreground">
+            Results for &ldquo;{search}&rdquo;
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {results.length} {results.length === 1 ? 'match' : 'matches'} near you
+          </p>
+        </div>
+        {results.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-border bg-muted/30 px-6 py-16 text-center">
+            <span className="grid size-14 place-items-center rounded-2xl bg-muted text-muted-foreground">
+              <Store className="size-7" />
+            </span>
+            <h3 className="text-lg font-bold text-foreground">No matches found</h3>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              Nothing matched &ldquo;{search}&rdquo; near you. Try a different term or widen your search radius.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {results.map((business) => (
+              <BusinessCard key={business.id} business={business} />
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
 
   // Focused view: a single category selected from the CategoryBar -> grid.
   if (activeCategory) {

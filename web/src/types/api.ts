@@ -60,6 +60,8 @@ export interface BusinessListItemResponse {
   categoryName: string;
   address: string;
   phone: string;
+  /** Names of the services this business offers; used for search matching. */
+  serviceNames: string[];
   /** Distance from the searched location, in miles. Present only for location-based results. */
   distanceMiles?: number;
 }

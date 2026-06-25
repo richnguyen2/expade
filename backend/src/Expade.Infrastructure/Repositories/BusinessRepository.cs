@@ -42,6 +42,7 @@ public class BusinessRepository : IBusinessRepository
     public async Task<IEnumerable<Business>> GetAllAsync()
         => await _context.Businesses
             .Include(b => b.Category)
+            .Include(b => b.Services)
             .OrderByDescending(b => b.CreatedAt)
             .ToListAsync();
 
@@ -58,6 +59,7 @@ public class BusinessRepository : IBusinessRepository
 
         return await _context.Businesses
             .Include(b => b.Category)
+            .Include(b => b.Services)
             .Where(b => b.Latitude >= minLat && b.Latitude <= maxLat
                      && b.Longitude >= minLon && b.Longitude <= maxLon)
             .ToListAsync();

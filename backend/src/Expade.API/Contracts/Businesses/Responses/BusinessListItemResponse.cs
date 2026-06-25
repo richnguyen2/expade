@@ -9,5 +9,6 @@ public record BusinessListItemResponse(
     string CategoryName,
     string Address,
     string Phone,
+    List<string> ServiceNames,
     double? DistanceMiles = null
 );
