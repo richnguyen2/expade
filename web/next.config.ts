@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Emit a self-contained server bundle for a minimal Docker runtime image.
-  output: "standalone",
+  // standalone output is needed for Docker; Vercel handles its own bundling
+  ...(process.env.NEXT_STANDALONE === "true" && { output: "standalone" }),
 };
 
 export default nextConfig;
