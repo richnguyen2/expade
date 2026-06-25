@@ -56,6 +56,28 @@ public class BusinessAppService : IBusinessAppService
         await _businesses.UpdateAsync(business);
     }
 
+    public async Task DeleteAsync(Guid businessId, string clerkId)
+    {
+        var (_, business, _) = await _access.RequireManagerAsync(businessId, clerkId);
+
+        // Notify clients with an upcoming booking before everything is removed (fire-and-forget).
+        var appointments = await _appointments.GetByBusinessIdAsync(businessId);
+        foreach (var appt in appointments)
+        {
+            if (appt.Status is not (AppointmentStatus.Pending or AppointmentStatus.Confirmed)) continue;
+            if (string.IsNullOrEmpty(appt.Client?.Email)) continue;
+
+            _ = _email.SendAppointmentCancelledEmailAsync(
+                appt.Client.Email,
+                appt.Client.Username,
+                business.Name,
+                appt.Service.Name,
+                FormatWhen(appt.StartDateTime, business.TimeZoneId));
+        }
+
+        await _businesses.DeleteWithDependentsAsync(businessId);
+    }
+
     public async Task<Business> CreateFromRequestAsync(string clerkId, CreateBusinessCommand command)
     {
         var user = await _access.ResolveUserAsync(clerkId);
@@ -197,6 +219,14 @@ public class BusinessAppService : IBusinessAppService
     }
 
     /* ---- helpers ---- */
+
+    /// <summary>Format an instant as a friendly wall-clock string in the business's timezone.</summary>
+    private static string FormatWhen(DateTimeOffset instant, string timeZoneId)
+    {
+        var tz = SlotGenerator.ResolveTimeZone(timeZoneId);
+        var local = TimeZoneInfo.ConvertTime(instant, tz);
+        return local.ToString("dddd, MMMM d, yyyy 'at' h:mm tt");
+    }
 
     private static BusinessHours ToBusinessHours(HoursItem h) => new()
     {

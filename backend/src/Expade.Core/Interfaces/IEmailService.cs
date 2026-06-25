@@ -11,4 +11,7 @@ public interface IEmailService
 
     /// <summary>Notify the client that their appointment was confirmed by the business.</summary>
     Task SendAppointmentConfirmedEmailAsync(string toEmail, string clientName, string businessName, string serviceName, string whenFormatted);
+
+    /// <summary>Notify the client that their appointment was cancelled because the business was deleted.</summary>
+    Task SendAppointmentCancelledEmailAsync(string toEmail, string clientName, string businessName, string serviceName, string whenFormatted);
 }

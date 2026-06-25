@@ -23,6 +23,7 @@ public interface IBusinessAppService
     Task<Business> GetByIdAsync(Guid id);
     Task<(Guid UserId, IEnumerable<Business> Businesses)> GetMyBusinessesAsync(string clerkId);
     Task UpdateAsync(Guid id, string clerkId, string phone, string description);
+    Task DeleteAsync(Guid businessId, string clerkId);
     Task<Business> CreateFromRequestAsync(string clerkId, CreateBusinessCommand command);
 
     Task<Service> AddServiceAsync(Guid businessId, string clerkId, ServiceCommand command);

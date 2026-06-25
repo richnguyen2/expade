@@ -149,4 +149,27 @@ public class EmailService : IEmailService
         request.Content = JsonContent.Create(payload);
         await _httpClient.SendAsync(request);
     }
+
+    public async Task SendAppointmentCancelledEmailAsync(string toEmail, string clientName, string businessName, string serviceName, string whenFormatted)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
+
+        var payload = new
+        {
+            from = _fromAddress,
+            to = new[] { toEmail },
+            subject = $"Your appointment was cancelled — {serviceName}",
+            html = $@"
+                <div style='font-family: sans-serif; color: #333;'>
+                    <p>Hi <strong>{clientName}</strong>,</p>
+                    <p>We're sorry to let you know that <strong>{businessName}</strong> is no longer on Expade, so your appointment for <strong>{serviceName}</strong> has been cancelled.</p>
+                    <p><strong>Was scheduled for:</strong> {whenFormatted}</p>
+                    <p>You don't need to do anything. We apologize for any inconvenience.</p>
+                </div>"
+        };
+
+        request.Content = JsonContent.Create(payload);
+        await _httpClient.SendAsync(request);
+    }
 }

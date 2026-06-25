@@ -75,6 +75,22 @@ public class BusinessRepository : IBusinessRepository
         await _context.SaveChangesAsync();
         return true;
     }
+    public async Task DeleteWithDependentsAsync(Guid id)
+    {
+        // Appointments reference Services/Workers with Restrict FKs, so they must be removed
+        // before the business cascade (Services/Workers/Hours/BlockedTimes) can run.
+        var appointments = await _context.Appointments
+            .Where(a => a.Service.BusinessId == id)
+            .ToListAsync();
+        _context.Appointments.RemoveRange(appointments);
+
+        var business = await _context.Businesses.FindAsync(id);
+        if (business is not null)
+            _context.Businesses.Remove(business);
+
+        // Single SaveChanges => one transaction (appointment removal + cascade delete are atomic).
+        await _context.SaveChangesAsync();
+    }
     public async Task<bool> ExistsByRequestIdAsync(Guid requestId)
     {
         return await _context.Businesses.AnyAsync(b => b.RequestId == requestId);

@@ -48,6 +48,20 @@ public static class BusinessEndpoints
             return Results.NoContent();
         }).RequireAuthorization("Worker");
 
+        // Delete a business and everything tied to it (services, team, hours, blocked times,
+        // and all appointments). Manager-only — enforced in the app service.
+        group.MapDelete("/{id:guid}", async (
+            Guid id,
+            ClaimsPrincipal userPrincipal,
+            IBusinessAppService service) =>
+        {
+            var clerkId = userPrincipal.GetClerkId();
+            if (clerkId is null) return Results.Unauthorized();
+
+            await service.DeleteAsync(id, clerkId);
+            return Results.NoContent();
+        }).RequireAuthorization("BusinessOwnerOnly");
+
         group.MapPost("/create-from-request", async (
             ClaimsPrincipal userPrincipal,
             CreateBusinessFromRequest contract,

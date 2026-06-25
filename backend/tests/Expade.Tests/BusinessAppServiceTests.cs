@@ -5,6 +5,7 @@ using Expade.Core.Entities;
 using Expade.Core.Enums;
 using Expade.Core.Interfaces;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace Expade.Tests;
 
@@ -91,5 +92,51 @@ public class BusinessAppServiceTests
 
         var cmd = new CreateBusinessCommand(reqId, "desc", [], [], []);
         await Assert.ThrowsAsync<ForbiddenException>(() => _svc.CreateFromRequestAsync("clerk_1", cmd));
+    }
+
+    [Fact]
+    public async Task Delete_AsNonManager_ThrowsAndDoesNotDelete()
+    {
+        var businessId = Guid.NewGuid();
+        _access.RequireManagerAsync(businessId, "clerk_1").ThrowsAsync(new ForbiddenException());
+
+        await Assert.ThrowsAsync<ForbiddenException>(() => _svc.DeleteAsync(businessId, "clerk_1"));
+
+        await _businesses.DidNotReceive().DeleteWithDependentsAsync(Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public async Task Delete_AsManager_EmailsActiveClientsAndDeletes()
+    {
+        var businessId = Guid.NewGuid();
+        var user = new User { Id = Guid.NewGuid() };
+        var business = new Business { Id = businessId, Name = "Cuts", TimeZoneId = "America/New_York" };
+        var manager = new Worker { UserId = user.Id, Role = WorkerRole.Manager };
+        _access.RequireManagerAsync(businessId, "clerk_1").Returns((user, business, manager));
+
+        var client = new User { Id = Guid.NewGuid(), Email = "client@example.com", Username = "Sam" };
+        _appointments.GetByBusinessIdAsync(businessId).Returns(new[]
+        {
+            new Appointment
+            {
+                ClientId = client.Id, Client = client,
+                Service = new Service { Name = "Haircut" },
+                StartDateTime = DateTimeOffset.UtcNow.AddDays(1),
+                Status = AppointmentStatus.Confirmed,
+            },
+            new Appointment
+            {
+                ClientId = client.Id, Client = client,
+                Service = new Service { Name = "Old" },
+                StartDateTime = DateTimeOffset.UtcNow.AddDays(-1),
+                Status = AppointmentStatus.Cancelled, // already cancelled — no email
+            },
+        });
+
+        await _svc.DeleteAsync(businessId, "clerk_1");
+
+        await _email.Received(1).SendAppointmentCancelledEmailAsync(
+            "client@example.com", "Sam", "Cuts", "Haircut", Arg.Any<string>());
+        await _businesses.Received(1).DeleteWithDependentsAsync(businessId);
     }
 }
