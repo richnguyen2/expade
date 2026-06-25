@@ -30,13 +30,16 @@ public static class ContractMappings
             b.Address,
             b.Category?.Name ?? "Unknown",
             b.TimeZoneId,
+            b.ServiceRadiusMiles,
+            b.Latitude,
+            b.Longitude,
             b.Services.Select(s => s.ToResponse()).ToList(),
             b.Workers.Select(w => w.ToResponse()).ToList()
         );
 
-    /// <summary>Public discovery card projection.</summary>
-    public static BusinessListItemResponse ToListItemResponse(this Business b) =>
-        new(b.Id, b.Name, b.Description, b.CategoryId, b.Category?.Name ?? "Unknown", b.Address, b.Phone);
+    /// <summary>Public discovery card projection. <paramref name="distanceMiles"/> is set for location-based results.</summary>
+    public static BusinessListItemResponse ToListItemResponse(this Business b, double? distanceMiles = null) =>
+        new(b.Id, b.Name, b.Description, b.CategoryId, b.Category?.Name ?? "Unknown", b.Address, b.Phone, distanceMiles);
 
     /// <summary>My-Businesses projection; Role is the requesting user's role at this business.</summary>
     public static BusinessSummaryResponse ToSummaryResponse(this Business b, Guid userId) =>

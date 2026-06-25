@@ -44,6 +44,11 @@ export type BusinessSignupValues = z.infer<typeof businessSignupSchema>;
 export const businessSettingsSchema = z.object({
   phone: phoneSchema,
   description: z.string().trim().max(2000, 'Description is too long'),
+  serviceRadiusMiles: z
+    .number({ message: 'Enter a service radius' })
+    .int('Use a whole number')
+    .min(1, 'Radius must be at least 1 mile')
+    .max(100, 'Radius can be at most 100 miles'),
 });
 
 export type BusinessSettingsValues = z.infer<typeof businessSettingsSchema>;

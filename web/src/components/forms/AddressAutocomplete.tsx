@@ -61,7 +61,7 @@ export default function AddressAutocomplete({
 
   return (
     <div ref={containerRef} className="relative">
-      <div className="flex gap-2">
+      <div className="flex gap-2 min-w-0">
         <Input
           id={id}
           value={value}
@@ -82,7 +82,7 @@ export default function AddressAutocomplete({
             }
           }}
           onBlur={onBlur}
-          className="h-11"
+          className="h-11 min-w-0 flex-1"
         />
         <Button
           type="button"

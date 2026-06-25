@@ -95,6 +95,26 @@ public class BusinessAppServiceTests
     }
 
     [Fact]
+    public async Task GetNearby_FiltersByBothRadiiAndSortsByDistance()
+    {
+        // User at (40.0, -75.0); search radius 25 mi.
+        var inRangeNear = new Business { Name = "Near", Latitude = 40.0, Longitude = -75.0, ServiceRadiusMiles = 10 };   // ~0 mi
+        var inRangeFar = new Business { Name = "Far", Latitude = 40.1, Longitude = -75.0, ServiceRadiusMiles = 10 };     // ~6.9 mi
+        var beyondOwnRadius = new Business { Name = "TooFarForItself", Latitude = 40.3, Longitude = -75.0, ServiceRadiusMiles = 10 }; // ~20.7 mi > its 10
+        var beyondUserRadius = new Business { Name = "TooFarForUser", Latitude = 40.5, Longitude = -75.0, ServiceRadiusMiles = 50 };  // ~34.5 mi > user 25
+
+        _businesses.GetNearbyCandidatesAsync(Arg.Any<double>(), Arg.Any<double>(), Arg.Any<double>())
+            .Returns(new[] { inRangeFar, beyondUserRadius, inRangeNear, beyondOwnRadius });
+
+        var result = await _svc.GetNearbyAsync(40.0, -75.0, 25);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Near", result[0].Business.Name); // nearest first
+        Assert.Equal("Far", result[1].Business.Name);
+        Assert.True(result[0].DistanceMiles <= result[1].DistanceMiles);
+    }
+
+    [Fact]
     public async Task Delete_AsNonManager_ThrowsAndDoesNotDelete()
     {
         var businessId = Guid.NewGuid();

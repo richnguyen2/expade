@@ -15,8 +15,12 @@ import type {
 } from '@/types';
 
 export const businessService = {
-  getAll: (token: string | null) =>
-    apiClient.get<BusinessListItemResponse[]>('/businesses', token),
+  getAll: (token: string | null, location?: { lat: number; lon: number; radiusMiles: number }) => {
+    const path = location
+      ? `/businesses?lat=${location.lat}&lon=${location.lon}&radiusMiles=${location.radiusMiles}`
+      : '/businesses';
+    return apiClient.get<BusinessListItemResponse[]>(path, token);
+  },
 
   getById: (id: string, token: string | null) =>
     apiClient.get<BusinessResponse>(`/businesses/${id}`, token),

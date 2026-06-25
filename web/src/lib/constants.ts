@@ -3,7 +3,8 @@
  * string arrays so cache invalidation stays consistent across the app.
  */
 export const QUERY_KEYS = {
-  businesses: ['businesses'] as const,
+  businesses: (lat?: number, lon?: number, radiusMiles?: number) =>
+    ['businesses', lat ?? null, lon ?? null, radiusMiles ?? null] as const,
   business: (id: string) => ['business', id] as const,
   myBusinesses: ['my-businesses'] as const,
   categories: ['categories'] as const,
