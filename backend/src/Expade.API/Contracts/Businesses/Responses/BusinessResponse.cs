@@ -8,6 +8,9 @@ public record BusinessResponse(
     string Address,
     string CategoryName,
     string TimeZoneId,
+    int ServiceRadiusMiles,
+    double Latitude,
+    double Longitude,
     List<ServiceResponse> Services,
     List<WorkerResponse> Workers
 );

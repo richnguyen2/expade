@@ -8,6 +8,8 @@ public interface IBusinessRepository
     /// <summary>The business that owns a given service, with workers + hours + services (for booking).</summary>
     Task<Business?> GetByServiceIdAsync(Guid serviceId);
     Task<IEnumerable<Business>> GetAllAsync();
+    /// <summary>Businesses within a lat/lon bounding box (cheap prefilter for distance search). Exact distance is computed by the caller.</summary>
+    Task<IEnumerable<Business>> GetNearbyCandidatesAsync(double lat, double lon, double boundingRadiusMiles);
     Task<IEnumerable<Business>> GetBusinessesByUserIdAsync(Guid userId);
     Task AddAsync(Business business);
     Task UpdateAsync(Business business);

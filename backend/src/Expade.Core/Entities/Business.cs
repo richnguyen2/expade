@@ -13,6 +13,8 @@ public class Business : IAuditable
     public double Longitude { get; set; }
     /// <summary>IANA timezone (e.g. "America/Chicago") the business operates in. Drives slot generation and display.</summary>
     public string TimeZoneId { get; set; } = "America/New_York";
+    /// <summary>How far (miles) the business will serve customers. Used by location-based discovery.</summary>
+    public int ServiceRadiusMiles { get; set; } = 10;
     // Navigation properties
     public ICollection<Worker> Workers { get; set; } = new List<Worker>();
     public ICollection<Service> Services { get; set; } = new List<Service>();

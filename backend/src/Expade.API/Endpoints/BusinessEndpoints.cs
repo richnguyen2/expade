@@ -14,10 +14,18 @@ public static class BusinessEndpoints
     {
         var group = app.MapGroup("/api/businesses").WithTags("Businesses");
 
-        group.MapGet("/", async (IBusinessAppService service) =>
+        // Discovery feed. With lat/lon, returns only businesses reachable from that point
+        // (within both the business's service radius and the user's search radius), nearest first.
+        group.MapGet("/", async (double? lat, double? lon, double? radiusMiles, IBusinessAppService service) =>
         {
-            var businesses = await service.GetAllAsync();
-            return Results.Ok(businesses.Select(b => b.ToListItemResponse()));
+            if (lat is null || lon is null)
+            {
+                var all = await service.GetAllAsync();
+                return Results.Ok(all.Select(b => b.ToListItemResponse()));
+            }
+
+            var nearby = await service.GetNearbyAsync(lat.Value, lon.Value, radiusMiles ?? 25);
+            return Results.Ok(nearby.Select(x => x.Business.ToListItemResponse(x.DistanceMiles)));
         }).RequireAuthorization();
 
         group.MapGet("/{id:guid}", async (Guid id, IBusinessAppService service) =>
@@ -44,9 +52,9 @@ public static class BusinessEndpoints
             var clerkId = userPrincipal.GetClerkId();
             if (clerkId is null) return Results.Unauthorized();
 
-            await service.UpdateAsync(id, clerkId, request.Phone, request.Description);
+            await service.UpdateAsync(id, clerkId, request.Phone, request.Description, request.ServiceRadiusMiles);
             return Results.NoContent();
-        }).RequireAuthorization("Worker");
+        }).RequireAuthorization("Worker").WithValidation<UpdateBusinessRequest>();
 
         // Delete a business and everything tied to it (services, team, hours, blocked times,
         // and all appointments). Manager-only — enforced in the app service.

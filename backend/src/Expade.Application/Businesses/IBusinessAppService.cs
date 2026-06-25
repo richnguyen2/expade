@@ -20,9 +20,10 @@ public record ServiceCommand(string Name, string Description, decimal Price, int
 public interface IBusinessAppService
 {
     Task<IEnumerable<Business>> GetAllAsync();
+    Task<IReadOnlyList<(Business Business, double DistanceMiles)>> GetNearbyAsync(double lat, double lon, double userRadiusMiles);
     Task<Business> GetByIdAsync(Guid id);
     Task<(Guid UserId, IEnumerable<Business> Businesses)> GetMyBusinessesAsync(string clerkId);
-    Task UpdateAsync(Guid id, string clerkId, string phone, string description);
+    Task UpdateAsync(Guid id, string clerkId, string phone, string description, int serviceRadiusMiles);
     Task DeleteAsync(Guid businessId, string clerkId);
     Task<Business> CreateFromRequestAsync(string clerkId, CreateBusinessCommand command);
 

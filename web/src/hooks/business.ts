@@ -11,12 +11,14 @@ import type {
   UpdateServiceRequest,
 } from '@/types';
 
-/** All businesses for the discovery feed. */
-export function useBusinesses() {
+/** Businesses near a location for the discovery feed (only enabled once a location is set). */
+export function useBusinesses(location: { lat: number; lon: number; radiusMiles: number } | null) {
   const { getToken } = useAuth();
   return useQuery({
-    queryKey: QUERY_KEYS.businesses,
-    queryFn: async () => businessService.getAll(await getToken()),
+    queryKey: QUERY_KEYS.businesses(location?.lat, location?.lon, location?.radiusMiles),
+    queryFn: async () =>
+      businessService.getAll(await getToken(), location ?? undefined),
+    enabled: Boolean(location),
   });
 }
 

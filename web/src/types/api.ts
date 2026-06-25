@@ -43,6 +43,10 @@ export interface BusinessResponse {
   categoryName: string;
   /** IANA timezone (e.g. "America/Chicago"). Times are displayed in this zone, not the viewer's. */
   timeZoneId: string;
+  /** How far (miles) the business serves customers; drives location-based discovery. */
+  serviceRadiusMiles: number;
+  latitude: number;
+  longitude: number;
   services: ServiceResponse[];
   workers: WorkerResponse[];
 }
@@ -56,6 +60,8 @@ export interface BusinessListItemResponse {
   categoryName: string;
   address: string;
   phone: string;
+  /** Distance from the searched location, in miles. Present only for location-based results. */
+  distanceMiles?: number;
 }
 
 /** GET /api/businesses/my-businesses */
@@ -102,6 +108,7 @@ export interface CreateBusinessRequestRequest {
 export interface UpdateBusinessRequest {
   phone: string;
   description: string;
+  serviceRadiusMiles: number;
 }
 
 export interface CreateServiceRequest {

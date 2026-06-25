@@ -37,6 +37,19 @@ public class BusinessAppService : IBusinessAppService
 
     public Task<IEnumerable<Business>> GetAllAsync() => _businesses.GetAllAsync();
 
+    public async Task<IReadOnlyList<(Business Business, double DistanceMiles)>> GetNearbyAsync(
+        double lat, double lon, double userRadiusMiles)
+    {
+        // Bounding box uses the user's search radius (the binding cap), then we filter exactly.
+        var candidates = await _businesses.GetNearbyCandidatesAsync(lat, lon, userRadiusMiles);
+
+        return candidates
+            .Select(b => (Business: b, DistanceMiles: GeoMath.DistanceMiles(lat, lon, b.Latitude, b.Longitude)))
+            .Where(x => x.DistanceMiles <= x.Business.ServiceRadiusMiles && x.DistanceMiles <= userRadiusMiles)
+            .OrderBy(x => x.DistanceMiles)
+            .ToList();
+    }
+
     public async Task<Business> GetByIdAsync(Guid id) =>
         await _businesses.GetByIdAsync(id) ?? throw new NotFoundException("Business not found.");
 
@@ -47,12 +60,13 @@ public class BusinessAppService : IBusinessAppService
         return (user.Id, businesses);
     }
 
-    public async Task UpdateAsync(Guid id, string clerkId, string phone, string description)
+    public async Task UpdateAsync(Guid id, string clerkId, string phone, string description, int serviceRadiusMiles)
     {
         var (_, business, _) = await _access.RequireManagerAsync(id, clerkId);
 
         business.Phone = phone;
         business.Description = description;
+        business.ServiceRadiusMiles = serviceRadiusMiles;
         await _businesses.UpdateAsync(business);
     }
 

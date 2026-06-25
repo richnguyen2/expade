@@ -1,11 +1,41 @@
 'use client';
 
+import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useBusinesses, useCategories } from '@/hooks';
+import { useUserLocation } from '@/context/LocationContext';
+import AddressAutocomplete from '@/components/forms/AddressAutocomplete';
 import BusinessCard from '@/components/business/BusinessCard';
 import BusinessRow from '@/components/home/BusinessRow';
 import { buildFeedSections } from '@/components/home/feed';
-import { Store } from 'lucide-react';
+import { MapPin, Store } from 'lucide-react';
+
+function SetLocationPrompt() {
+  const { setLocation } = useUserLocation();
+  const [address, setAddress] = useState('');
+
+  return (
+    <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-border bg-muted/30 px-6 py-16 text-center">
+      <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+        <MapPin className="size-7" />
+      </span>
+      <div>
+        <h3 className="text-lg font-bold text-foreground">Discover businesses near you</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Set your location to see providers that serve your area.
+        </p>
+      </div>
+      <div className="w-full text-left">
+        <AddressAutocomplete
+          value={address}
+          onChange={setAddress}
+          onResolved={(s) => setLocation({ lat: s.lat, lon: s.lon, label: s.formattedAddress })}
+          placeholder="123 Main St, City, State"
+        />
+      </div>
+    </div>
+  );
+}
 
 function EmptyState({ filtered }: { filtered: boolean }) {
   return (
@@ -16,8 +46,8 @@ function EmptyState({ filtered }: { filtered: boolean }) {
       <h3 className="text-lg font-bold text-foreground">No businesses here yet</h3>
       <p className="max-w-sm text-sm text-muted-foreground">
         {filtered
-          ? 'No providers in this category yet — try another, or check back soon.'
-          : 'New providers are joining all the time. Check back soon!'}
+          ? 'No providers in this category near you — try another, or widen your search radius.'
+          : 'No providers serve your area yet. Try widening your search radius or check back soon.'}
       </p>
     </div>
   );
@@ -27,8 +57,16 @@ export default function DiscoverFeed() {
   const searchParams = useSearchParams();
   const activeCategory = searchParams.get('category');
 
-  const businessesQuery = useBusinesses();
+  const { location, radiusMiles } = useUserLocation();
+  const businessesQuery = useBusinesses(
+    location ? { lat: location.lat, lon: location.lon, radiusMiles } : null,
+  );
   const categoriesQuery = useCategories();
+
+  // Location is required for discovery.
+  if (!location) {
+    return <SetLocationPrompt />;
+  }
 
   if (businessesQuery.isPending || categoriesQuery.isPending) {
     return (

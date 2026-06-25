@@ -39,11 +39,29 @@ public class BusinessRepository : IBusinessRepository
         .ToListAsync();
 }
 
-    public async Task<IEnumerable<Business>> GetAllAsync() 
+    public async Task<IEnumerable<Business>> GetAllAsync()
         => await _context.Businesses
             .Include(b => b.Category)
             .OrderByDescending(b => b.CreatedAt)
             .ToListAsync();
+
+    public async Task<IEnumerable<Business>> GetNearbyCandidatesAsync(double lat, double lon, double boundingRadiusMiles)
+    {
+        // Bounding-box prefilter: ~69 miles per degree of latitude; longitude degrees shrink with latitude.
+        var latDelta = boundingRadiusMiles / 69.0;
+        var lonDelta = boundingRadiusMiles / (69.0 * Math.Cos(lat * Math.PI / 180.0));
+
+        var minLat = lat - latDelta;
+        var maxLat = lat + latDelta;
+        var minLon = lon - lonDelta;
+        var maxLon = lon + lonDelta;
+
+        return await _context.Businesses
+            .Include(b => b.Category)
+            .Where(b => b.Latitude >= minLat && b.Latitude <= maxLat
+                     && b.Longitude >= minLon && b.Longitude <= maxLon)
+            .ToListAsync();
+    }
 
     public async Task AddAsync(Business business)
     {

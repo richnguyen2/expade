@@ -41,6 +41,7 @@ public class UpdateBusinessValidator : AbstractValidator<UpdateBusinessRequest>
     {
         RuleFor(x => x.Phone).NotEmpty().MaximumLength(30);
         RuleFor(x => x.Description).MaximumLength(2000);
+        RuleFor(x => x.ServiceRadiusMiles).InclusiveBetween(1, 100);
     }
 }
 

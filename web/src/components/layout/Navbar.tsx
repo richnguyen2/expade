@@ -2,8 +2,9 @@
 
 import { UserButton, useUser, SignInButton, SignUpButton } from '@clerk/nextjs';
 import Link from 'next/link';
-import { MapPin, Search, Bell, ChevronDown } from 'lucide-react';
+import { Search, Bell } from 'lucide-react';
 import Logo from '@/components/layout/Logo';
+import LocationPicker from '@/components/layout/LocationPicker';
 import { Button } from '@/components/ui/button';
 
 export default function Navbar() {
@@ -18,11 +19,7 @@ export default function Navbar() {
 
       {/* Location + Search */}
       <div className="flex flex-1 items-center justify-center gap-3">
-        <button className="hidden items-center gap-2 rounded-xl border border-border bg-muted/60 px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted lg:flex">
-          <MapPin className="size-4 text-primary" />
-          <span className="max-w-[160px] truncate">683 McConnell Run</span>
-          <ChevronDown className="size-4 text-muted-foreground" />
-        </button>
+        <LocationPicker />
 
         <div className="relative w-full max-w-xl">
           <Search className="absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />

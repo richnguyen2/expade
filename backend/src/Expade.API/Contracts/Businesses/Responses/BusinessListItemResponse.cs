@@ -8,5 +8,6 @@ public record BusinessListItemResponse(
     Guid CategoryId,
     string CategoryName,
     string Address,
-    string Phone
+    string Phone,
+    double? DistanceMiles = null
 );

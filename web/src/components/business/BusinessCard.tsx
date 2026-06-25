@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MapPin, Phone, Star } from 'lucide-react';
+import { MapPin, Phone } from 'lucide-react';
 import type { BusinessListItemResponse } from '@/types';
 
 interface BusinessCardProps {
@@ -17,10 +17,12 @@ export default function BusinessCard({ business }: BusinessCardProps) {
         <div className="grid size-16 place-items-center rounded-2xl bg-card text-2xl font-extrabold text-primary shadow-sm ring-1 ring-border">
           {business.name.charAt(0).toUpperCase()}
         </div>
-        {/* <span className="absolute right-3 top-3 flex items-center gap-1 rounded-lg bg-card px-2 py-1 text-xs font-bold text-foreground shadow-sm">
-          <Star className="size-3.5 fill-amber-400 text-amber-400" />
-          4.8
-        </span> */}
+        {business.distanceMiles != null && (
+          <span className="absolute right-3 top-3 flex items-center gap-1 rounded-lg bg-card px-2 py-1 text-xs font-bold text-foreground shadow-sm">
+            <MapPin className="size-3.5 text-primary" />
+            {business.distanceMiles.toFixed(1)} mi
+          </span>
+        )}
       </div>
 
       {/* Body */}

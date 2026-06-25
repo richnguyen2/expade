@@ -4,6 +4,8 @@ import { use } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useBusiness, useBusinessHours } from '@/hooks';
+import { useUserLocation } from '@/context/LocationContext';
+import { distanceMiles } from '@/lib/geo';
 import { Button } from '@/components/ui/button';
 import BusinessHero from '@/components/business/BusinessHero';
 import ServiceList from '@/components/business/ServiceList';
@@ -16,6 +18,12 @@ export default function BusinessDetailsPage({ params }: BusinessPageProps) {
   const { id } = use(params);
   const { data: business, isPending, error } = useBusiness(id);
   const { data: hours, isLoading } = useBusinessHours(id);
+  const { location } = useUserLocation();
+
+  const distance =
+    location && business
+      ? distanceMiles(location.lat, location.lon, business.latitude, business.longitude)
+      : undefined;
 
   if (isPending || isLoading) {
     return (
@@ -52,7 +60,7 @@ export default function BusinessDetailsPage({ params }: BusinessPageProps) {
         Back to discover
       </Link>
 
-      <BusinessHero business={business} hours={hours} />
+      <BusinessHero business={business} hours={hours} distanceMiles={distance} />
 
       {business.description && (
         <section className="space-y-3">

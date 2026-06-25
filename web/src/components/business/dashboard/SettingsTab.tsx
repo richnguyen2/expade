@@ -27,7 +27,11 @@ export default function SettingsTab({ business }: SettingsTabProps) {
     formState: { errors },
   } = useForm<BusinessSettingsValues>({
     resolver: zodResolver(businessSettingsSchema),
-    defaultValues: { phone: business.phone, description: business.description },
+    defaultValues: {
+      phone: business.phone,
+      description: business.description,
+      serviceRadiusMiles: business.serviceRadiusMiles,
+    },
   });
 
   const onSubmit = (values: BusinessSettingsValues) => {
@@ -89,6 +93,24 @@ export default function SettingsTab({ business }: SettingsTabProps) {
           />
           {errors.description && (
             <p className="mt-1 text-xs font-medium text-destructive">{errors.description.message}</p>
+          )}
+        </div>
+        <div>
+          <Label htmlFor="serviceRadiusMiles">Service radius (miles)</Label>
+          <Input
+            id="serviceRadiusMiles"
+            type="number"
+            min={1}
+            max={100}
+            aria-invalid={!!errors.serviceRadiusMiles}
+            {...register('serviceRadiusMiles', { valueAsNumber: true })}
+            className="mt-1.5"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            How far from your location customers can discover and book you.
+          </p>
+          {errors.serviceRadiusMiles && (
+            <p className="mt-1 text-xs font-medium text-destructive">{errors.serviceRadiusMiles.message}</p>
           )}
         </div>
 
