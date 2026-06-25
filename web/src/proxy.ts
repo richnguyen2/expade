@@ -1,22 +1,10 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-// 1. Define which routes are "Admin-only"
-const isAdminRoute = createRouteMatcher(['/admin(.*)']);
-
-export default clerkMiddleware(async (auth, req) => { // 1. Make this function async
-  if (isAdminRoute(req)) {
-    // 2. Await the auth() call
-    const { sessionClaims } = await auth(); 
-    
-    // 3. Access the role (if it's flat now, no need for JSON.parse!)
-    const role = sessionClaims?.role;
-    
-    if (role !== 'Admin') {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
-  }
-});
+// Clerk temporarily disabled for diagnosis — re-enable after confirming Clerk prod config
+export default function middleware(_req: NextRequest) {
+  return NextResponse.next();
+}
 
 // 6. Configure which paths the middleware runs on
 export const config = {
