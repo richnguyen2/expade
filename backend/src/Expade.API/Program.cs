@@ -11,6 +11,7 @@ using Expade.Core.Enums;
 using FluentValidation;
 using Expade.Core.Interfaces;
 using Expade.Infrastructure;
+using Microsoft.AspNetCore.HttpOverrides;
 using Expade.Infrastructure.Repositories;
 using Expade.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -124,6 +125,17 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 var app = builder.Build();
+
+// Behind a cloud proxy (Fly/Render/etc.) TLS is terminated at the edge and HTTP is forwarded to the
+// container. Honor X-Forwarded-Proto/For so the app sees the real https scheme + client IP. Must run
+// before any middleware that depends on the scheme (HTTPS redirect, auth, rate limiting).
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+forwardedHeadersOptions.KnownIPNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
 
 app.UseExceptionHandler();
 
