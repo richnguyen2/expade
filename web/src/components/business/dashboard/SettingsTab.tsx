@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useUpdateBusiness } from '@/hooks';
 import { businessSettingsSchema, type BusinessSettingsValues } from '@/lib/validation';
 import type { BusinessResponse } from '@/types';
+import DeleteBusinessCard from './DeleteBusinessCard';
 
 interface SettingsTabProps {
   business: BusinessResponse;
@@ -45,7 +46,8 @@ export default function SettingsTab({ business }: SettingsTabProps) {
   ];
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-bold text-foreground">Business details</h2>
         {successMessage && (
@@ -101,6 +103,9 @@ export default function SettingsTab({ business }: SettingsTabProps) {
           </Button>
         </div>
       </form>
+      </div>
+
+      <DeleteBusinessCard businessId={business.id} businessName={business.name} />
     </div>
   );
 }

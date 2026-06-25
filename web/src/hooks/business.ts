@@ -50,6 +50,19 @@ export function useUpdateBusiness(id: string) {
   });
 }
 
+/** Permanently delete a business and everything tied to it (Manager only). */
+export function useDeleteBusiness(id: string) {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => businessService.deleteBusiness(id, await getToken()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myBusinesses });
+      queryClient.removeQueries({ queryKey: QUERY_KEYS.business(id) });
+    },
+  });
+}
+
 /** Onboard a business from an approved request. */
 export function useCreateBusinessFromRequest() {
   const { getToken } = useAuth();

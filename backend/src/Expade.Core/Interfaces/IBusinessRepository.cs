@@ -15,6 +15,8 @@ public interface IBusinessRepository
     Task SaveChangesAsync();
     void RemoveService(Service service);
     Task<bool> DeleteAsync(Guid id);
+    /// <summary>Delete a business and everything tied to it (appointments must be removed first — Service/Worker → Appointment FKs are Restrict). Atomic.</summary>
+    Task DeleteWithDependentsAsync(Guid id);
     Task<bool> ExistsByRequestIdAsync(Guid requestId);
 
     // Weekly operating hours

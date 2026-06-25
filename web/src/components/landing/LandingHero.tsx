@@ -97,17 +97,6 @@ export default function LandingHero() {
               );
             })}
           </div>
-
-          {/* Booked confirmation chip */}
-          <div className="absolute -bottom-5 left-6 flex items-center gap-3 rounded-2xl border border-border bg-primary px-4 py-3 text-primary-foreground shadow-lg">
-            <div className="grid size-9 place-items-center rounded-full bg-white/20">
-              <Star className="size-4 fill-current" />
-            </div>
-            <div className="text-sm leading-tight">
-              <p className="font-bold">Appointment booked</p>
-              <p className="text-primary-foreground/80">Tomorrow, 2:00 PM</p>
-            </div>
-          </div>
         </div>
       </div>
     </section>

@@ -30,6 +30,9 @@ export const businessService = {
   updateBusiness: (id: string, data: UpdateBusinessRequest, token: string | null) =>
     apiClient.patch<void>(`/businesses/${id}`, data, token),
 
+  deleteBusiness: (id: string, token: string | null) =>
+    apiClient.delete(`/businesses/${id}`, token),
+
   addService: (id: string, data: CreateServiceRequest, token: string | null) =>
     apiClient.post<ServiceResponse>(`/businesses/${id}/services`, data, token),
 
