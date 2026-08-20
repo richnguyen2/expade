@@ -427,3 +427,17 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# ── Expade project-specific ──────────────────────────────────────────
+
+# Slide-deck build workspace (local only)
+.deck/
+
+# Env files — the `*.env` rule above does NOT match `.env.local`-style names
+.env
+.env.*
+!.env.example
+
+# Environment-specific settings that may hold real connection strings
+**/appsettings.Production.json
+**/appsettings.*.Local.json

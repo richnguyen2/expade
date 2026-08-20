@@ -1,5 +1,7 @@
 # Expade
 
+**Live at → [joinexpade.com](https://joinexpade.com)**
+
 A local-services marketplace — think DoorDash, but for services. Customers discover and book local service providers; businesses manage their listing, services, team, schedule, and bookings.
 
 - **Discovery & booking** — browse businesses by category, view services, and book appointments against real availability.
@@ -191,9 +193,9 @@ npm run lint
 
 ## Deployment
 
-Production runs on a low-cost, config-driven stack:
+Production is live at **[joinexpade.com](https://joinexpade.com)**, running on a low-cost, config-driven stack:
 
-- **Web** → Vercel (auto-deploys on push to `main`; previews per PR). `NEXT_PUBLIC_*` env vars are build-time.
+- **Web** → Vercel, served at [joinexpade.com](https://joinexpade.com) (auto-deploys on push to `main`; previews per PR). `NEXT_PUBLIC_*` env vars are build-time.
 - **API** → Fly.io (`backend/fly.toml`; container build; TLS terminated at the edge with forwarded headers). Migrations auto-apply on deploy.
 - **Database** → Neon (managed Postgres). Use the **pooled** connection string in Npgsql keyword form.
 - **Auth** → a separate Clerk **production** instance with custom-domain DNS.
